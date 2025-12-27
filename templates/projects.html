@@ -7,17 +7,20 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 <body>
-  <main class="container">
-    <header class="header">
-      <div class="header-top">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">StudyTimmer</div>
+      <nav class="sidebar-nav">
+        <a class="sidebar-link" href="{{ url_for('index') }}">🧭 Tasks</a>
+        <a class="sidebar-link active" href="{{ url_for('projects') }}">📁 Projects</a>
+        <a class="sidebar-link" href="{{ url_for('labels') }}">🏷️ Labels</a>
+      </nav>
+    </aside>
+    <main class="container">
+      <header class="header">
         <h1>Projects</h1>
-        <nav class="nav">
-          <a href="{{ url_for('index') }}">Tasks</a>
-          <a href="{{ url_for('labels') }}">Labels</a>
-        </nav>
-      </div>
-      <p>Manage your project list</p>
-    </header>
+        <p>Manage your project list</p>
+      </header>
 
     <section class="card">
       <form class="task-form" method="post" action="{{ url_for('create_project') }}">
@@ -59,6 +62,7 @@
         <p class="empty">No projects yet.</p>
       {% endif %}
     </section>
-  </main>
+    </main>
+  </div>
 </body>
 </html>

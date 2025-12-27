@@ -7,18 +7,20 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 <body>
-  <main class="container">
-    <header class="header">
-      <div class="header-top">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">StudyTimmer</div>
+      <nav class="sidebar-nav">
+        <a class="sidebar-link" href="{{ url_for('index') }}">🧭 Tasks</a>
+        <a class="sidebar-link active" href="{{ url_for('projects') }}">📁 Projects</a>
+        <a class="sidebar-link" href="{{ url_for('labels') }}">🏷️ Labels</a>
+      </nav>
+    </aside>
+    <main class="container">
+      <header class="header">
         <h1>{{ project['name'] }}</h1>
-        <nav class="nav">
-          <a href="{{ url_for('projects') }}">Projects</a>
-          <a href="{{ url_for('index') }}">All Tasks</a>
-          <a href="{{ url_for('labels') }}">Labels</a>
-        </nav>
-      </div>
-      <p>Tasks for this project</p>
-    </header>
+        <p>Tasks for this project</p>
+      </header>
 
     <section class="card">
       {% if project['labels'] %}
@@ -98,7 +100,8 @@
         <p class="empty">No tasks yet.</p>
       {% endif %}
     </section>
-  </main>
+    </main>
+  </div>
   <script>
     window.availableLabels = {{ labels | tojson }};
   </script>
