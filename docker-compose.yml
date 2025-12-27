@@ -7,3 +7,7 @@ services:
       - "5000:5000"
     volumes:
       - ./data:/app/data
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1

@@ -11,6 +11,27 @@ function formatSeconds(totalSeconds) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+let tasksState = new Map();
+
+function setTasksState(tasks) {
+  tasksState = new Map(
+    tasks.map((task) => [
+      String(task.id),
+      {
+        totalSeconds: Number(task.total_seconds || 0),
+        isRunning: Boolean(task.is_running),
+      },
+    ]),
+  );
+}
+
+function updateTimeDisplay(taskId, totalSeconds) {
+  const timeEl = document.querySelector(`.task-time[data-task-id="${taskId}"]`);
+  if (timeEl) {
+    timeEl.textContent = formatSeconds(totalSeconds);
+  }
+}
+
 function renderTasks(tasks) {
   const container = document.getElementById("task-list");
   if (!container) {
@@ -19,9 +40,11 @@ function renderTasks(tasks) {
 
   if (!tasks.length) {
     container.innerHTML = '<p class="empty">No tasks yet.</p>';
+    tasksState = new Map();
     return;
   }
 
+  setTasksState(tasks);
   const items = tasks
     .map((task) => {
       const name = escapeHtml(task.name);
@@ -36,7 +59,7 @@ function renderTasks(tasks) {
       return `<li class="task-item">
                 <div class="task-info">
                   <span class="task-name">${name}</span>
-                  <span class="task-time">${time}</span>
+                  <span class="task-time" data-task-id="${task.id}">${time}</span>
                 </div>
                 <div class="task-actions">
                   ${action}
@@ -63,6 +86,15 @@ async function createTask(name) {
   return payload.tasks || [];
 }
 
+async function loadTasks() {
+  const response = await fetch("/api/tasks");
+  if (!response.ok) {
+    throw new Error("Failed to load tasks");
+  }
+  const payload = await response.json();
+  return payload.tasks || [];
+}
+
 async function updateTaskState(taskId, action) {
   const response = await fetch(`/api/tasks/${taskId}/${action}`, {
     method: "POST",
@@ -74,6 +106,18 @@ async function updateTaskState(taskId, action) {
 
   const payload = await response.json();
   return payload.tasks || [];
+}
+
+function startLiveTimer() {
+  setInterval(() => {
+    for (const [taskId, state] of tasksState.entries()) {
+      if (!state.isRunning) {
+        continue;
+      }
+      state.totalSeconds += 1;
+      updateTimeDisplay(taskId, state.totalSeconds);
+    }
+  }, 1000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -100,6 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
       form.submit();
     }
   });
+
+  loadTasks()
+    .then(renderTasks)
+    .catch(() => {});
+  startLiveTimer();
 
   if (taskList) {
     taskList.addEventListener("submit", async (event) => {

@@ -46,11 +46,12 @@ class SQLiteTaskRepository:
             SELECT t.id, t.name,
                    IFNULL(SUM(
                        CASE
+                           WHEN te.id IS NULL THEN 0
                            WHEN te.ended_at IS NULL THEN (strftime('%s','now') - strftime('%s', te.started_at))
                            ELSE (strftime('%s', te.ended_at) - strftime('%s', te.started_at))
                        END
                    ), 0) AS total_seconds,
-                   MAX(CASE WHEN te.ended_at IS NULL THEN 1 ELSE 0 END) AS is_running
+                   MAX(CASE WHEN te.id IS NOT NULL AND te.ended_at IS NULL THEN 1 ELSE 0 END) AS is_running
             FROM tasks t
             LEFT JOIN time_entries te ON te.task_id = t.id
             GROUP BY t.id
