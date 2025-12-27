@@ -52,13 +52,13 @@ function renderTasks(tasks) {
       const time = formatSeconds(task.total_seconds || 0);
       const action = task.is_running
         ? `<form method="post" action="/tasks/${task.id}/stop" data-action="stop" data-task-id="${task.id}">
-             <button class="stop" type="submit">Stop</button>
+             <button class="stop icon-button" type="submit" aria-label="Pause">⏸</button>
            </form>`
         : `<form method="post" action="/tasks/${task.id}/start" data-action="start" data-task-id="${task.id}">
-             <button class="start" type="submit">Start</button>
+             <button class="start icon-button" type="submit" aria-label="Resume">▶</button>
            </form>`;
       const remove = `<form method="post" action="/tasks/${task.id}/delete" data-action="delete" data-task-id="${task.id}">
-                        <button class="delete" type="submit">Delete</button>
+                        <button class="delete icon-button" type="submit" aria-label="Delete">×</button>
                       </form>`;
       return `<li class="task-item">
                 <div class="task-info">
