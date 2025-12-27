@@ -25,12 +25,24 @@
     <section class="card">
       <form class="task-form" method="post" action="{{ url_for('create_label') }}">
         <input type="text" name="name" placeholder="Label name" required />
-        <select name="color" required>
-          <option value="#e85d75">Rose</option>
-          <option value="#1f6feb">Blue</option>
-          <option value="#f2a900">Amber</option>
-          <option value="#2d7d46">Green</option>
-        </select>
+        <div class="color-picker" role="radiogroup" aria-label="Label colors">
+          <label class="color-option">
+            <input type="radio" name="color" value="#e85d75" checked />
+            <span class="color-dot" style="background-color: #e85d75"></span>
+          </label>
+          <label class="color-option">
+            <input type="radio" name="color" value="#1f6feb" />
+            <span class="color-dot" style="background-color: #1f6feb"></span>
+          </label>
+          <label class="color-option">
+            <input type="radio" name="color" value="#f2a900" />
+            <span class="color-dot" style="background-color: #f2a900"></span>
+          </label>
+          <label class="color-option">
+            <input type="radio" name="color" value="#2d7d46" />
+            <span class="color-dot" style="background-color: #2d7d46"></span>
+          </label>
+        </div>
         <button type="submit">Add</button>
       </form>
     </section>

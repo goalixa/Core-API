@@ -265,6 +265,36 @@ body {
   cursor: pointer;
 }
 
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-option {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.color-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #d0d0d0;
+}
+
+.color-option input:checked + .color-dot {
+  box-shadow: 0 0 0 2px #1f1f1f;
+}
+
 .empty {
   color: var(--muted);
 }
