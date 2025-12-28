@@ -20,7 +20,7 @@
       <div class="sidebar-section">
         <span class="sidebar-title">Analyze</span>
         <nav class="sidebar-nav">
-          <span class="sidebar-link disabled">📈 Coming soon</span>
+          <a class="sidebar-link" href="{{ url_for('reports') }}">📈 Reports</a>
         </nav>
       </div>
       <div class="sidebar-section">
@@ -76,7 +76,7 @@
                     {% endfor %}
                   </div>
                 {% endif %}
-                <span class="task-time">{{ task['total_seconds'] | format_seconds }}</span>
+                <span class="task-time">{{ task['rolling_24h_seconds'] | format_seconds }}</span>
               </div>
               <div class="task-actions">
                 {% if task['is_running'] %}

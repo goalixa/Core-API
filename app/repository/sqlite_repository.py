@@ -118,9 +118,9 @@ class SQLiteTaskRepository:
                            ELSE MAX(
                                0,
                                MIN(
-                                   COALESCE(strftime('%s', te.ended_at), params.now_ts),
+                                   COALESCE(CAST(strftime('%s', te.ended_at) AS INTEGER), params.now_ts),
                                    params.now_ts
-                               ) - MAX(strftime('%s', te.started_at), params.window_start)
+                               ) - MAX(CAST(strftime('%s', te.started_at) AS INTEGER), params.window_start)
                            )
                        END
                    ), 0) AS rolling_24h_seconds,
@@ -158,9 +158,9 @@ class SQLiteTaskRepository:
                            ELSE MAX(
                                0,
                                MIN(
-                                   COALESCE(strftime('%s', te.ended_at), params.now_ts),
+                                   COALESCE(CAST(strftime('%s', te.ended_at) AS INTEGER), params.now_ts),
                                    params.now_ts
-                               ) - MAX(strftime('%s', te.started_at), params.window_start)
+                               ) - MAX(CAST(strftime('%s', te.started_at) AS INTEGER), params.window_start)
                            )
                        END
                    ), 0) AS rolling_24h_seconds,

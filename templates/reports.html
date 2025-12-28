@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Timer</title>
+  <title>Reports</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 <body>
@@ -14,13 +14,13 @@
         <span class="sidebar-title">Track</span>
         <nav class="sidebar-nav">
           <a class="sidebar-link" href="{{ url_for('overview') }}">📊 Overview</a>
-          <a class="sidebar-link active" href="{{ url_for('timer') }}">⏱️ Timer</a>
+          <a class="sidebar-link" href="{{ url_for('timer') }}">⏱️ Timer</a>
         </nav>
       </div>
       <div class="sidebar-section">
         <span class="sidebar-title">Analyze</span>
         <nav class="sidebar-nav">
-          <a class="sidebar-link" href="{{ url_for('reports') }}">📈 Reports</a>
+          <a class="sidebar-link active" href="{{ url_for('reports') }}">📈 Reports</a>
         </nav>
       </div>
       <div class="sidebar-section">
@@ -34,12 +34,27 @@
     </aside>
     <main class="container">
       <header class="header">
-        <h1>Timer</h1>
-        <p>Start a focused session and track your time.</p>
+        <h1>Reports</h1>
+        <p>Total time by task (all-time).</p>
       </header>
 
       <section class="card">
-        <div class="chart-placeholder">Timer UI placeholder</div>
+        <h2>Task Totals</h2>
+        {% if tasks %}
+          <ul class="task-list">
+            {% for task in tasks %}
+              <li class="task-item">
+                <div class="task-info">
+                  <span class="name-badge name-task">{{ task['name'] }}</span>
+                  <span class="task-project">{{ task['project_name'] or 'Unassigned' }}</span>
+                  <span class="task-time">{{ task['total_seconds'] | format_seconds }}</span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty">No tasks yet.</p>
+        {% endif %}
       </section>
     </main>
   </div>

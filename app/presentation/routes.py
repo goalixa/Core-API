@@ -10,6 +10,11 @@ def register_routes(app, service):
     def timer():
         return render_template("timer.html")
 
+    @app.route("/reports", methods=["GET"])
+    def reports():
+        tasks = service.list_tasks()
+        return render_template("reports.html", tasks=tasks)
+
     @app.route("/tasks", methods=["GET"])
     def index():
         tasks = service.list_tasks()

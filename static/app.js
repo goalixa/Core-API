@@ -5,10 +5,13 @@ function escapeHtml(value) {
 }
 
 function formatSeconds(totalSeconds) {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const days = Math.floor(totalSeconds / 86400);
+  const remainder = totalSeconds % 86400;
+  const hours = Math.floor(remainder / 3600);
+  const minutes = Math.floor((remainder % 3600) / 60);
+  const seconds = remainder % 60;
+  const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return days ? `${days}d ${time}` : time;
 }
 
 let tasksState = new Map();
@@ -66,7 +69,7 @@ function renderTasks(tasks) {
     .map((task) => {
       const name = escapeHtml(task.name);
       const project = escapeHtml(task.project_name || "Unassigned");
-      const time = formatSeconds(task.total_seconds || 0);
+      const time = formatSeconds(task.rolling_24h_seconds || 0);
       const labels = renderLabelChips(task.labels || []);
       const action = task.is_running
         ? `<form method="post" action="/tasks/${task.id}/stop" data-action="stop" data-task-id="${task.id}">
