@@ -36,9 +36,9 @@ def seed_db():
     now = datetime.utcnow()
     start_day = (now - timedelta(days=90)).replace(hour=0, minute=0, second=0, microsecond=0)
 
+    project_names = ["Cloud Migration", "Mobile App Redesign", "Data Platform"]
     project_ids = []
-    for idx in range(1, 4):
-        name = f"Project {idx}"
+    for idx, name in enumerate(project_names, start=1):
         created_at = (start_day - timedelta(days=idx)).isoformat()
         cur.execute(
             "INSERT INTO projects (name, created_at) VALUES (?, ?)",
@@ -46,10 +46,33 @@ def seed_db():
         )
         project_ids.append(cur.lastrowid)
 
+    task_names_by_project = {
+        "Cloud Migration": [
+            "Inventory Legacy Services",
+            "Design VPC Architecture",
+            "Set Up CI/CD Pipeline",
+            "Migrate Auth Service",
+            "Load Test Cutover",
+        ],
+        "Mobile App Redesign": [
+            "Wireframe Key Screens",
+            "Build Design System",
+            "Implement New Onboarding",
+            "Refactor Navigation",
+            "Accessibility QA",
+        ],
+        "Data Platform": [
+            "Ingest Raw Events",
+            "Normalize Schemas",
+            "Build ETL Jobs",
+            "Define Metrics Layer",
+            "Create Daily Dashboards",
+        ],
+    }
+
     task_ids = []
-    for project_id in project_ids:
-        for t_idx in range(1, 6):
-            task_name = f"Task {t_idx} (P{project_id})"
+    for project_id, project_name in zip(project_ids, project_names):
+        for t_idx, task_name in enumerate(task_names_by_project[project_name], start=1):
             created_at = (start_day + timedelta(days=t_idx)).isoformat()
             cur.execute(
                 "INSERT INTO tasks (name, created_at, project_id) VALUES (?, ?, ?)",
