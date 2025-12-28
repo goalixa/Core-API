@@ -474,26 +474,14 @@ body {
   border-bottom: 1px solid #e1e4ea;
   padding: 10px 24px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
 }
 
 .filter-group {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.filter-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #596273;
-}
-
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
 .chip {
@@ -519,8 +507,6 @@ body {
 
 .calendar-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
 }
 
@@ -546,7 +532,8 @@ body {
 }
 
 .calendar-input {
-  min-width: 240px;
+  width: max-content;
+  max-width: 100%;
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid #d7d7d7;
@@ -555,10 +542,64 @@ body {
   cursor: pointer;
 }
 
+.litepicker {
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
+  border-radius: 16px;
+  width: 320px !important;
+  max-width: 90vw;
+  background: #ffffff;
+}
+
+.litepicker .container__main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.litepicker .container__months,
+.litepicker .container__months .month-item {
+  width: 100% !important;
+  margin-left: 0;
+}
+
+.litepicker .container__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 12px;
+}
+
+.litepicker-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px 0;
+  position: static;
+}
+
+.litepicker-shortcuts button {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d7dbe5;
+  background: #f7f8fb;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  color: #243043;
+}
+
+.litepicker-shortcuts button:hover {
+  background: #e9efff;
+  border-color: #c9d7ff;
+}
+
 .filter-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-left: auto;
 }
 
 .reports-body {

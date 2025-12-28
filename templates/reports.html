@@ -49,23 +49,7 @@
       </header>
       <section class="reports-filters">
         <div class="filter-group">
-          <span class="filter-label">Calendar</span>
-          <div class="filter-chips">
-            <button class="chip" type="button">Today</button>
-            <button class="chip active" type="button">This week</button>
-            <button class="chip" type="button">This month</button>
-            <button class="chip" type="button">This quarter</button>
-            <button class="chip" type="button">This year</button>
-            <button class="chip" type="button">Last week</button>
-            <button class="chip" type="button">Last month</button>
-            <button class="chip ghost" type="button">All shortcuts</button>
-          </div>
           <div class="calendar-row">
-            <div class="calendar-pill">
-              <span class="calendar-title">Default</span>
-              <span class="calendar-days">Mon Tue Wed Thu Fri Sat Sun</span>
-              <span class="calendar-days">Mon Tue Wed Thu Fri Sat Sun</span>
-            </div>
             <input class="calendar-input" id="report-range" type="text" readonly />
           </div>
         </div>
@@ -200,6 +184,66 @@
         singleMode: false,
         startDate: start,
         endDate: today,
+        showTooltip: false,
+        numberOfMonths: 1,
+        numberOfColumns: 1,
+        showWeekNumbers: false,
+        setup: (pickerInstance) => {
+          pickerInstance.on("render", (ui) => {
+            const main = ui.querySelector(".litepicker .container__main");
+            if (main && !ui.querySelector(".litepicker-shortcuts")) {
+              const shortcuts = document.createElement("div");
+              shortcuts.className = "litepicker-shortcuts";
+              shortcuts.innerHTML = `
+                <button type="button" data-shortcut="today">Today</button>
+                <button type="button" data-shortcut="this-week">This week</button>
+                <button type="button" data-shortcut="this-month">This month</button>
+                <button type="button" data-shortcut="this-quarter">This quarter</button>
+                <button type="button" data-shortcut="this-year">This year</button>
+                <button type="button" data-shortcut="last-week">Last week</button>
+                <button type="button" data-shortcut="last-month">Last month</button>
+                <button type="button" data-shortcut="all">All time</button>
+              `;
+              main.prepend(shortcuts);
+              shortcuts.addEventListener("click", (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLButtonElement)) {
+                  return;
+                }
+                const shortcut = target.dataset.shortcut;
+                const now = new Date();
+                const startDate = new Date(now);
+                const endDate = new Date(now);
+
+                if (shortcut === "today") {
+                  // keep today
+                } else if (shortcut === "this-week") {
+                  const day = (now.getDay() + 6) % 7;
+                  startDate.setDate(now.getDate() - day);
+                } else if (shortcut === "this-month") {
+                  startDate.setDate(1);
+                } else if (shortcut === "this-quarter") {
+                  const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+                  startDate.setMonth(quarterStartMonth, 1);
+                } else if (shortcut === "this-year") {
+                  startDate.setMonth(0, 1);
+                } else if (shortcut === "last-week") {
+                  const day = (now.getDay() + 6) % 7;
+                  endDate.setDate(now.getDate() - day - 1);
+                  startDate.setDate(endDate.getDate() - 6);
+                } else if (shortcut === "last-month") {
+                  startDate.setMonth(now.getMonth() - 1, 1);
+                  endDate.setMonth(now.getMonth(), 0);
+                } else if (shortcut === "all") {
+                  startDate.setMonth(now.getMonth() - 3, 1);
+                }
+
+                picker.setDateRange(startDate, endDate);
+                updateLabel(picker.getStartDate(), picker.getEndDate());
+              });
+            }
+          });
+        },
         format: "YYYY-MM-DD",
         tooltipText: { one: "day", other: "days" },
       });
