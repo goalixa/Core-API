@@ -77,36 +77,42 @@
           <span class="summary-value" id="summary-average">0.00 Hours</span>
         </div>
       </section>
-      <div class="reports-body">
-
-      <div class="reports-duo">
-        <section class="card reports-chart">
-          <h2>Time summary</h2>
-          <div class="chart-controls">
-            <div class="mode-switch">
-              <button class="mode-button active" type="button" data-mode="bar">Bar</button>
-              <button class="mode-button" type="button" data-mode="line">Line</button>
+      <div class="reports-wide">
+        <div class="reports-duo">
+          <section class="card reports-chart">
+            <h2>Time summary</h2>
+            <div class="chart-controls">
+              <div class="mode-switch">
+                <button class="mode-button active" type="button" data-mode="bar">Bar</button>
+                <button class="mode-button" type="button" data-mode="line">Line</button>
+              </div>
             </div>
-          </div>
-          {% if summary %}
-            <div class="chart-panel is-active">
-              <canvas id="reports-chart" height="160"></canvas>
-            </div>
-          {% else %}
-            <p class="empty">No activity yet.</p>
-          {% endif %}
-        </section>
+            {% if summary %}
+              <div class="chart-panel is-active">
+                <canvas id="reports-chart" height="160"></canvas>
+              </div>
+            {% else %}
+              <p class="empty">No activity yet.</p>
+            {% endif %}
+          </section>
         <section class="card donut-panel">
           <div class="donut-header">
             <h3>Project distribution</h3>
-            <span class="donut-total" id="distribution-total">00:00:00</span>
+            <select class="donut-select" id="distribution-group">
+              <option value="projects" selected>Projects</option>
+              <option value="labels">Labels</option>
+              <option value="tasks">Tasks</option>
+            </select>
           </div>
           <div class="donut-wrap">
             <canvas id="distribution-chart" height="160"></canvas>
+            <div class="donut-center" id="distribution-total">00:00:00</div>
           </div>
-          <ul class="donut-legend" id="distribution-legend"></ul>
         </section>
+        </div>
       </div>
+
+      <div class="reports-body">
 
       <section class="card">
         <h2>Task Totals</h2>
@@ -210,9 +216,8 @@
 
     const updateDistribution = (items, totalSeconds) => {
       const ctx = document.getElementById("distribution-chart");
-      const legend = document.getElementById("distribution-legend");
       const totalEl = document.getElementById("distribution-total");
-      if (!ctx || !legend || !totalEl) {
+      if (!ctx || !totalEl) {
         return;
       }
 
@@ -227,13 +232,36 @@
         "#ff8f00",
         "#6d4c41",
       ];
-      const labels = items.map((item) => item.project);
+      const labels = items.map((item) => item.label);
       const values = items.map((item) => item.seconds);
       const colors = items.map((_, index) => palette[index % palette.length]);
 
       if (distributionChart) {
         distributionChart.destroy();
       }
+
+      const percentLabelPlugin = {
+        id: "percentLabel",
+        afterDatasetsDraw(chart) {
+          const { ctx: canvasCtx } = chart;
+          const dataset = chart.data.datasets[0];
+          const meta = chart.getDatasetMeta(0);
+          const sum = dataset.data.reduce((acc, val) => acc + val, 0);
+          canvasCtx.save();
+          canvasCtx.fillStyle = "#1f2937";
+          canvasCtx.font = "600 11px Vazirmatn, sans-serif";
+          meta.data.forEach((arc, index) => {
+            const value = dataset.data[index];
+            if (!sum || !value) {
+              return;
+            }
+            const percent = ((value / sum) * 100).toFixed(1) + "%";
+            const pos = arc.tooltipPosition();
+            canvasCtx.fillText(percent, pos.x + 8, pos.y - 6);
+          });
+          canvasCtx.restore();
+        },
+      };
 
       distributionChart = new Chart(ctx, {
         type: "doughnut",
@@ -264,21 +292,10 @@
               },
             },
           },
-          cutout: "70%",
+          cutout: "72%",
         },
+        plugins: [percentLabelPlugin],
       });
-
-      legend.innerHTML = items
-        .map((item, index) => {
-          const percent = item.percent.toFixed(1);
-          const time = formatSeconds(item.seconds);
-          return `<li>
-            <span class="legend-color" style="background:${colors[index]}"></span>
-            <span class="legend-text">${item.project}</span>
-            <span class="legend-meta">${percent}% · ${time}</span>
-          </li>`;
-        })
-        .join("");
     };
 
     const formatSeconds = (totalSeconds) => {
@@ -403,7 +420,8 @@
         }
         const startValue = startDate.format("YYYY-MM-DD");
         const endValue = endDate.format("YYYY-MM-DD");
-        fetch(`/api/reports/summary?start=${startValue}&end=${endValue}`)
+        const groupBy = document.getElementById("distribution-group")?.value || "projects";
+        fetch(`/api/reports/summary?start=${startValue}&end=${endValue}&group=${groupBy}`)
           .then((response) => response.json())
           .then((payload) => {
             updateChart(payload.summary || []);
@@ -420,6 +438,13 @@
         updateLabel(startDate, endDate);
         refreshSummary(startDate, endDate);
       });
+
+      const groupSelect = document.getElementById("distribution-group");
+      if (groupSelect) {
+        groupSelect.addEventListener("change", () => {
+          refreshSummary(picker.getStartDate(), picker.getEndDate());
+        });
+      }
     }
   </script>
 </body>

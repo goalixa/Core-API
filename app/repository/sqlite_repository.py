@@ -367,3 +367,32 @@ class SQLiteTaskRepository:
             """,
             (end_iso, start_iso),
         ).fetchall()
+
+    def fetch_time_entries_with_tasks_between(self, start_iso, end_iso):
+        db = self._get_db()
+        return db.execute(
+            """
+            SELECT te.id, te.task_id, te.started_at, te.ended_at,
+                   t.name AS task_name
+            FROM time_entries te
+            JOIN tasks t ON t.id = te.task_id
+            WHERE te.started_at < ?
+              AND (te.ended_at IS NULL OR te.ended_at > ?)
+            """,
+            (end_iso, start_iso),
+        ).fetchall()
+
+    def fetch_time_entries_with_labels_between(self, start_iso, end_iso):
+        db = self._get_db()
+        return db.execute(
+            """
+            SELECT te.id, te.task_id, te.started_at, te.ended_at,
+                   l.name AS label_name
+            FROM time_entries te
+            JOIN task_labels tl ON tl.task_id = te.task_id
+            JOIN labels l ON l.id = tl.label_id
+            WHERE te.started_at < ?
+              AND (te.ended_at IS NULL OR te.ended_at > ?)
+            """,
+            (end_iso, start_iso),
+        ).fetchall()

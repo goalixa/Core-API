@@ -218,6 +218,59 @@ class TaskService:
         distribution.sort(key=lambda item: item["seconds"], reverse=True)
         return distribution, total_seconds
 
+    def distribution_by_range(self, start_date, end_date, group_by):
+        start_day = datetime.combine(start_date, datetime.min.time())
+        end_day = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+
+        if group_by == "tasks":
+            entries = self.repository.fetch_time_entries_with_tasks_between(
+                start_day.isoformat(), end_day.isoformat()
+            )
+            name_key = "task_name"
+            fallback = "Unnamed Task"
+        elif group_by == "labels":
+            entries = self.repository.fetch_time_entries_with_labels_between(
+                start_day.isoformat(), end_day.isoformat()
+            )
+            name_key = "label_name"
+            fallback = "Unlabeled"
+        else:
+            entries = self.repository.fetch_time_entries_with_projects_between(
+                start_day.isoformat(), end_day.isoformat()
+            )
+            name_key = "project_name"
+            fallback = "Unassigned"
+
+        totals = {}
+        for entry in entries:
+            entry_start = datetime.fromisoformat(entry["started_at"])
+            entry_end = (
+                datetime.fromisoformat(entry["ended_at"])
+                if entry["ended_at"]
+                else datetime.utcnow()
+            )
+            overlap_start = max(entry_start, start_day)
+            overlap_end = min(entry_end, end_day)
+            if overlap_end <= overlap_start:
+                continue
+            seconds = int((overlap_end - overlap_start).total_seconds())
+            label = entry[name_key] or fallback
+            totals[label] = totals.get(label, 0) + seconds
+
+        total_seconds = sum(totals.values())
+        distribution = []
+        for label, seconds in totals.items():
+            percent = (seconds / total_seconds) * 100 if total_seconds else 0
+            distribution.append(
+                {
+                    "label": label,
+                    "seconds": seconds,
+                    "percent": percent,
+                }
+            )
+        distribution.sort(key=lambda item: item["seconds"], reverse=True)
+        return distribution, total_seconds
+
     def list_labels(self):
         labels = self.repository.fetch_labels()
         return [dict(label) for label in labels]

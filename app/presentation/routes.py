@@ -43,8 +43,11 @@ def register_routes(app, service):
             start_date, end_date = end_date, start_date
 
         summary = service.summary_by_range(start_date, end_date)
-        distribution, total_seconds = service.project_distribution_by_range(
-            start_date, end_date
+        group_by = request.args.get("group", "projects")
+        if group_by not in {"projects", "labels", "tasks"}:
+            group_by = "projects"
+        distribution, total_seconds = service.distribution_by_range(
+            start_date, end_date, group_by
         )
         days = max((end_date - start_date).days + 1, 1)
         avg_daily_hours = total_seconds / 3600 / days
