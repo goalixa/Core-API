@@ -31,8 +31,33 @@
           <a class="sidebar-link" href="{{ url_for('index') }}">🧭 Tasks</a>
         </nav>
       </div>
+      <div class="sidebar-footer">
+        <button class="theme-toggle" type="button" data-theme-toggle>🌓 Theme</button>
+      </div>
     </aside>
     <main class="container">
+      <header class="timer-hero">
+        <div class="timer-controls">
+          <div class="timer-select">
+            <label class="timer-label" for="task-picker">What are you working on?</label>
+            <input id="task-picker" type="text" placeholder="What are you working on?" />
+            <div class="timer-dropdown">
+              <input class="timer-search" type="text" placeholder="Search tasks..." />
+              <div class="timer-list">
+                <button type="button">Recent: Design VPC Architecture</button>
+                <button type="button">Recent: Build ETL Jobs</button>
+                <button type="button">Recent: Refactor Navigation</button>
+                <button type="button">Inventory Legacy Services</button>
+                <button type="button">Accessibility QA</button>
+              </div>
+            </div>
+          </div>
+          <div class="timer-actions">
+            <button class="timer-btn primary" type="button">Start</button>
+            <button class="timer-btn" type="button">Pause</button>
+          </div>
+        </div>
+      </header>
       <header class="header">
         <h1>Timer</h1>
         <p>Start a focused session and track your time.</p>
@@ -43,5 +68,6 @@
       </section>
     </main>
   </div>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
 </body>
 </html>

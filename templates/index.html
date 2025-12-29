@@ -31,6 +31,9 @@
           <a class="sidebar-link active" href="{{ url_for('index') }}">🧭 Tasks</a>
         </nav>
       </div>
+      <div class="sidebar-footer">
+        <button class="theme-toggle" type="button" data-theme-toggle>🌓 Theme</button>
+      </div>
     </aside>
     <main class="container">
       <header class="header">
@@ -119,6 +122,7 @@
   <script>
     window.availableLabels = {{ labels | tojson }};
   </script>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

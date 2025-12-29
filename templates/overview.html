@@ -31,6 +31,9 @@
           <a class="sidebar-link" href="{{ url_for('index') }}">🧭 Tasks</a>
         </nav>
       </div>
+      <div class="sidebar-footer">
+        <button class="theme-toggle" type="button" data-theme-toggle>🌓 Theme</button>
+      </div>
     </aside>
     <main class="container">
       <header class="header">
@@ -65,6 +68,7 @@
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <script>
     const summary = {{ summary | tojson }};
     const labels = summary.map((item) => item.label);
