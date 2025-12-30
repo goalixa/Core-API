@@ -77,16 +77,50 @@
           </div>
           <div class="timer-range-right">
             <div class="timer-view-box">
-              <button class="timer-view-btn is-active" type="button">Calendar</button>
-              <button class="timer-view-btn" type="button">View List</button>
-              <button class="timer-view-btn" type="button">Timesheet</button>
+              <button class="timer-view-btn is-active" type="button" data-view-button="calendar">Calendar</button>
+              <button class="timer-view-btn" type="button" data-view-button="list">View List</button>
+              <button class="timer-view-btn" type="button" data-view-button="timesheet">Timesheet</button>
             </div>
           </div>
         </div>
       </section>
-      <section class="timer-calendar-section">
+      <section class="timer-calendar-section timer-view-panel is-active" data-view-panel="calendar">
         <div class="card timer-calendar-card">
           <div id="timer-calendar"></div>
+        </div>
+      </section>
+      <section class="timer-calendar-section timer-view-panel" data-view-panel="list">
+        <div class="card timer-list-card">
+          {% if timer_list_groups %}
+            {% for group in timer_list_groups %}
+              <div class="timer-list-group">
+                <div class="timer-list-header">
+                  <span class="timer-list-day">{{ group["label"] }}</span>
+                  <span class="timer-list-total">{{ group["total_seconds"] | format_seconds }}</span>
+                </div>
+                {% for entry in group["entries"] %}
+                  <div class="timer-list-item">
+                    <div class="timer-list-title">{{ entry["task_name"] }}</div>
+                    <div class="timer-list-project">{{ entry["project_name"] }}</div>
+                    {% if entry["labels"] %}
+                      <div class="timer-list-label">{{ entry["labels"] | join(", ") }}</div>
+                    {% endif %}
+                    <div class="timer-list-meta">
+                      <span class="timer-list-duration">{{ entry["duration_seconds"] | format_seconds }}</span>
+                      <span class="timer-list-time">{{ entry["start_time"] }} - {{ entry["end_time"] }}</span>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="timer-empty-state">No entries yet.</div>
+          {% endif %}
+        </div>
+      </section>
+      <section class="timer-calendar-section timer-view-panel" data-view-panel="timesheet">
+        <div class="card timer-list-card">
+          <div class="timer-empty-state">No timesheet data yet.</div>
         </div>
       </section>
       <main class="container">
@@ -104,13 +138,18 @@
       const rangeInput = document.getElementById("timer-range");
       if (rangeInput && typeof Litepicker !== "undefined") {
         const today = new Date();
-        const start = new Date(today);
-        start.setDate(today.getDate() - 6);
+        const startValue = "{{ timer_range_start or '' }}";
+        const endValue = "{{ timer_range_end or '' }}";
+        const start = startValue ? new Date(`${startValue}T00:00:00`) : new Date(today);
+        const end = endValue ? new Date(`${endValue}T00:00:00`) : new Date(today);
+        if (!startValue) {
+          start.setDate(today.getDate() - 6);
+        }
         const picker = new Litepicker({
           element: rangeInput,
           singleMode: false,
           startDate: start,
-          endDate: today,
+          endDate: end,
           showTooltip: false,
           numberOfMonths: 1,
           numberOfColumns: 1,
@@ -119,24 +158,49 @@
         rangeInput.value = `${picker.getStartDate().format("YYYY-MM-DD")} → ${picker
           .getEndDate()
           .format("YYYY-MM-DD")}`;
+        picker.on("selected", (date1, date2) => {
+          if (!date1 || !date2) {
+            return;
+          }
+          const nextStart = date1.format("YYYY-MM-DD");
+          const nextEnd = date2.format("YYYY-MM-DD");
+          window.location.search = `?start=${nextStart}&end=${nextEnd}`;
+        });
       }
 
+      const panels = document.querySelectorAll("[data-view-panel]");
+      const buttons = document.querySelectorAll("[data-view-button]");
       const calendarEl = document.getElementById("timer-calendar");
-      if (!calendarEl || typeof FullCalendar === "undefined") {
-        return;
+      const calendar =
+        calendarEl && typeof FullCalendar !== "undefined"
+          ? new FullCalendar.Calendar(calendarEl, {
+              initialView: "dayGridMonth",
+              height: "auto",
+              headerToolbar: {
+                left: "prev,next",
+                center: "title",
+                right: "",
+              },
+              navLinks: true,
+              dayMaxEvents: true,
+            })
+          : null;
+      if (calendar) {
+        calendar.render();
       }
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "dayGridMonth",
-        height: "auto",
-        headerToolbar: {
-          left: "prev,next",
-          center: "title",
-          right: "",
-        },
-        navLinks: true,
-        dayMaxEvents: true,
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const targetView = button.dataset.viewButton;
+          buttons.forEach((btn) => btn.classList.toggle("is-active", btn === button));
+          panels.forEach((panel) =>
+            panel.classList.toggle("is-active", panel.dataset.viewPanel === targetView),
+          );
+          if (targetView === "calendar" && calendar) {
+            calendar.updateSize();
+          }
+        });
       });
-      calendar.render();
     });
   </script>
 </body>

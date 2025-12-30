@@ -843,12 +843,90 @@ body {
   padding: 20px 24px 0;
 }
 
+.timer-view-panel {
+  display: none;
+}
+
+.timer-view-panel.is-active {
+  display: block;
+}
+
 .timer-calendar-card {
   padding: 16px;
 }
 
 #timer-calendar {
   min-height: 520px;
+}
+
+.timer-list-card {
+  padding: 18px;
+  display: grid;
+  gap: 18px;
+}
+
+.timer-list-group {
+  display: grid;
+  gap: 12px;
+}
+
+.timer-list-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.timer-list-day {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.timer-list-total {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.timer-list-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--soft);
+  display: grid;
+  gap: 6px;
+}
+
+.timer-list-title {
+  font-weight: 400;
+  color: var(--text);
+}
+
+.timer-list-project {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.timer-list-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.timer-list-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.timer-list-duration {
+  font-weight: 400;
+}
+
+.timer-empty-state {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--muted);
 }
 
 .timer-calendar-card .fc {

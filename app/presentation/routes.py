@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import jsonify, redirect, render_template, request, url_for
 
@@ -16,7 +16,29 @@ def register_routes(app, service):
 
     @app.route("/timer", methods=["GET"])
     def timer():
-        return render_template("timer.html")
+        start = request.args.get("start")
+        end = request.args.get("end")
+        if start and end:
+            try:
+                start_date = datetime.fromisoformat(start).date()
+                end_date = datetime.fromisoformat(end).date()
+            except ValueError:
+                end_date = datetime.utcnow().date()
+                start_date = end_date - timedelta(days=6)
+        else:
+            end_date = datetime.utcnow().date()
+            start_date = end_date - timedelta(days=6)
+
+        if end_date < start_date:
+            start_date, end_date = end_date, start_date
+
+        list_groups = service.list_time_entries_by_range(start_date, end_date)
+        return render_template(
+            "timer.html",
+            timer_list_groups=list_groups,
+            timer_range_start=start_date.isoformat(),
+            timer_range_end=end_date.isoformat(),
+        )
 
     @app.route("/reports", methods=["GET"])
     def reports():

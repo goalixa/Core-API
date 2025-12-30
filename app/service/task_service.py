@@ -271,6 +271,84 @@ class TaskService:
         distribution.sort(key=lambda item: item["seconds"], reverse=True)
         return distribution, total_seconds
 
+    def list_time_entries_by_range(self, start_date, end_date):
+        start_day = datetime.combine(start_date, datetime.min.time())
+        end_day = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+        entries = self.repository.fetch_time_entries_with_task_details_between(
+            start_day.isoformat(), end_day.isoformat()
+        )
+        task_ids = {entry["task_id"] for entry in entries}
+        labels_map = self.repository.fetch_task_labels_map(list(task_ids))
+
+        days = (end_date - start_date).days + 1
+        buckets = []
+        today = datetime.utcnow().date()
+        for day_offset in range(days):
+            day_start = start_day + timedelta(days=day_offset)
+            day_end = day_start + timedelta(days=1)
+            if day_start.date() == today:
+                label = "Today"
+            elif day_start.date() == (today - timedelta(days=1)):
+                label = "Yesterday"
+            else:
+                label = day_start.strftime("%a, %d %b")
+            buckets.append(
+                {
+                    "label": label,
+                    "start": day_start,
+                    "end": day_end,
+                    "entries": [],
+                    "total_seconds": 0,
+                }
+            )
+
+        now = datetime.utcnow()
+        for entry in entries:
+            entry_start = datetime.fromisoformat(entry["started_at"])
+            entry_end = (
+                datetime.fromisoformat(entry["ended_at"])
+                if entry["ended_at"]
+                else now
+            )
+            entry_labels = [
+                label["name"] for label in labels_map.get(entry["task_id"], [])
+            ]
+            for bucket in buckets:
+                overlap_start = max(entry_start, bucket["start"])
+                overlap_end = min(entry_end, bucket["end"])
+                if overlap_end <= overlap_start:
+                    continue
+                duration = int((overlap_end - overlap_start).total_seconds())
+                bucket["total_seconds"] += duration
+                bucket["entries"].append(
+                    {
+                        "task_name": entry["task_name"] or "Unnamed Task",
+                        "project_name": entry["project_name"] or "Unassigned",
+                        "labels": entry_labels,
+                        "duration_seconds": duration,
+                        "start_time": self._format_time(overlap_start),
+                        "end_time": self._format_time(overlap_end),
+                        "sort_ts": overlap_start.timestamp(),
+                    }
+                )
+
+        result = []
+        for bucket in buckets:
+            if not bucket["entries"]:
+                continue
+            bucket["entries"].sort(key=lambda item: item["sort_ts"], reverse=True)
+            for item in bucket["entries"]:
+                item.pop("sort_ts", None)
+            bucket.pop("start", None)
+            bucket.pop("end", None)
+            result.append(bucket)
+
+        return result
+
+    @staticmethod
+    def _format_time(value):
+        return value.strftime("%I:%M %p").lstrip("0")
+
     def list_labels(self):
         labels = self.repository.fetch_labels()
         return [dict(label) for label in labels]
