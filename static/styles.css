@@ -49,6 +49,7 @@ body {
   font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
   background: var(--page-bg);
   color: var(--text);
+  font-size: 0.95rem;
 }
 
 .layout {
@@ -115,7 +116,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sidebar-link:hover,
@@ -143,7 +144,8 @@ body {
 
 .header h1 {
   margin: 0 0 8px;
-  font-size: 2.4rem;
+  font-size: 1.7rem;
+  font-weight: 600;
 }
 
 .header p {
@@ -157,6 +159,12 @@ body {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 10px;
 }
 
 .task-form {

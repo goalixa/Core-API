@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ title or "Focus" }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   {% block head_extra %}{% endblock %}
 </head>
@@ -16,28 +17,28 @@
         <div class="sidebar-section">
           <span class="sidebar-title">Track</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('overview') }}">📊 Overview</a>
-            <a class="sidebar-link {% if active_page == 'timer' %}active{% endif %}" href="{{ url_for('timer') }}">⏱️ Timer</a>
-            <a class="sidebar-link {% if active_page == 'calendar' %}active{% endif %}" href="{{ url_for('calendar') }}">🗓️ Calendar</a>
+            <a class="sidebar-link {% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('overview') }}"><i class="bi bi-bar-chart-line"></i>Overview</a>
+            <a class="sidebar-link {% if active_page == 'timer' %}active{% endif %}" href="{{ url_for('timer') }}"><i class="bi bi-stopwatch"></i>Timer</a>
+            <a class="sidebar-link {% if active_page == 'calendar' %}active{% endif %}" href="{{ url_for('calendar') }}"><i class="bi bi-calendar-week"></i>Calendar</a>
           </nav>
         </div>
         <div class="sidebar-section">
           <span class="sidebar-title">Analyze</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}">📈 Reports</a>
+            <a class="sidebar-link {% if active_page == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}"><i class="bi bi-graph-up"></i>Reports</a>
           </nav>
         </div>
         <div class="sidebar-section">
           <span class="sidebar-title">Manage</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}">📁 Projects</a>
-            <a class="sidebar-link {% if active_page == 'labels' %}active{% endif %}" href="{{ url_for('labels') }}">🏷️ Tags</a>
-            <a class="sidebar-link {% if active_page == 'tasks' %}active{% endif %}" href="{{ url_for('index') }}">🧭 Tasks</a>
-            <a class="sidebar-link {% if active_page == 'account' %}active{% endif %}" href="{{ url_for('account') }}">👤 Account</a>
+            <a class="sidebar-link {% if active_page == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}"><i class="bi bi-folder2-open"></i>Projects</a>
+            <a class="sidebar-link {% if active_page == 'labels' %}active{% endif %}" href="{{ url_for('labels') }}"><i class="bi bi-tags"></i>Tags</a>
+            <a class="sidebar-link {% if active_page == 'tasks' %}active{% endif %}" href="{{ url_for('index') }}"><i class="bi bi-list-check"></i>Tasks</a>
+            <a class="sidebar-link {% if active_page == 'account' %}active{% endif %}" href="{{ url_for('account') }}"><i class="bi bi-person-circle"></i>Account</a>
           </nav>
         </div>
         <div class="sidebar-footer">
-          <button class="theme-toggle" type="button" data-theme-toggle>🌓 Theme</button>
+          <button class="theme-toggle" type="button" data-theme-toggle><i class="bi bi-moon-stars"></i>Theme</button>
         </div>
       </aside>
       <main class="col-12 col-lg-10 px-0">
