@@ -1,44 +1,24 @@
 {% extends "layout.html" %}
-{% set title = "Overview" %}
-{% set active_page = "overview" %}
+{% set title = "Goals" %}
+{% set active_page = "goals" %}
 
 {% block content %}
   <div class="container py-4">
     <header class="header">
-      <h1>Overview</h1>
-      <p>High-level insights from your projects and tasks.</p>
+      <h1>Goals</h1>
+      <p>Define outcomes and connect projects and tasks.</p>
     </header>
-
-    <section class="card">
-      <h2>Time summary</h2>
-      <div class="chart-controls">
-        <div class="range-switch">
-          <span class="range-chip active">7d</span>
-        </div>
-        <div class="mode-switch">
-          <button class="btn btn-outline-primary btn-sm mode-button active" type="button" data-mode="bar">Bar</button>
-          <button class="btn btn-outline-primary btn-sm mode-button" type="button" data-mode="line">Line</button>
-        </div>
-      </div>
-      {% if summary %}
-        <div class="chart-panel is-active">
-          <canvas id="overview-chart" height="160"></canvas>
-        </div>
-      {% else %}
-        <p class="empty">No activity yet.</p>
-      {% endif %}
-    </section>
 
     <section class="card goals-card">
       <div class="goals-header">
         <div>
           <p class="goals-label">Goals</p>
-          <h2 class="goals-title">Track what you want to finish</h2>
+          <h2 class="goals-title">Your outcomes at a glance</h2>
         </div>
         <div class="goals-actions">
           <button class="btn btn-outline-secondary btn-sm" type="button">
-            <i class="bi bi-funnel"></i>
-            Filter
+            <i class="bi bi-sliders"></i>
+            Settings
           </button>
           <button class="btn btn-primary btn-sm" type="button">
             <i class="bi bi-plus-lg"></i>
@@ -46,15 +26,18 @@
           </button>
         </div>
       </div>
+
       <div class="goals-filters">
         <button class="btn btn-light btn-sm is-active" type="button">All</button>
         <button class="btn btn-light btn-sm" type="button">Active</button>
         <button class="btn btn-light btn-sm" type="button">Completed</button>
         <button class="btn btn-light btn-sm" type="button">Archived</button>
       </div>
+
       <div class="goals-search">
         <input type="text" placeholder="Search goals, projects, or tasks..." />
       </div>
+
       <div class="goals-grid">
         <article class="goal-card">
           <div class="goal-top">
@@ -92,16 +75,17 @@
               <span class="goal-project-name">Working on Lab4</span>
               <span class="goal-project-tasks">3 tasks</span>
             </div>
+            <div class="goal-project">
+              <span class="goal-project-name">Exam prep</span>
+              <span class="goal-project-tasks">2 tasks</span>
+            </div>
           </div>
           <div class="goal-footer">
-            <button class="btn btn-outline-secondary btn-sm" type="button">
-              View Projects
-            </button>
-            <button class="btn btn-outline-primary btn-sm" type="button">
-              Add Task
-            </button>
+            <button class="btn btn-outline-secondary btn-sm" type="button">View Projects</button>
+            <button class="btn btn-outline-primary btn-sm" type="button">Add Task</button>
           </div>
         </article>
+
         <article class="goal-card">
           <div class="goal-top">
             <span class="goal-status active">On track</span>
@@ -140,14 +124,11 @@
             </div>
           </div>
           <div class="goal-footer">
-            <button class="btn btn-outline-secondary btn-sm" type="button">
-              View Projects
-            </button>
-            <button class="btn btn-outline-primary btn-sm" type="button">
-              Add Task
-            </button>
+            <button class="btn btn-outline-secondary btn-sm" type="button">View Projects</button>
+            <button class="btn btn-outline-primary btn-sm" type="button">Add Task</button>
           </div>
         </article>
+
         <article class="goal-card">
           <div class="goal-top">
             <span class="goal-status paused">Needs focus</span>
@@ -182,93 +163,41 @@
             </div>
           </div>
           <div class="goal-footer">
-            <button class="btn btn-outline-secondary btn-sm" type="button">
-              View Projects
-            </button>
-            <button class="btn btn-outline-primary btn-sm" type="button">
-              Add Task
-            </button>
+            <button class="btn btn-outline-secondary btn-sm" type="button">View Projects</button>
+            <button class="btn btn-outline-primary btn-sm" type="button">Add Task</button>
           </div>
         </article>
       </div>
     </section>
 
     <section class="card">
-      <h2>Focus by Project</h2>
-      <div class="chart-placeholder">Chart placeholder</div>
+      <h2>Goal details</h2>
+      <div class="goal-details-grid">
+        <div class="goal-detail-card">
+          <h3>Milestones</h3>
+          <ul class="goal-detail-list">
+            <li>Complete module 1 and 2</li>
+            <li>Finish lab exercises</li>
+            <li>Review practice exams</li>
+          </ul>
+        </div>
+        <div class="goal-detail-card">
+          <h3>Linked projects</h3>
+          <ul class="goal-detail-list">
+            <li>AWS Cloud Technical Essential</li>
+            <li>Lab5</li>
+            <li>Exam prep</li>
+          </ul>
+        </div>
+        <div class="goal-detail-card">
+          <h3>Next actions</h3>
+          <ul class="goal-detail-list">
+            <li>Schedule 2 focused sessions</li>
+            <li>Review notes from last week</li>
+            <li>Assign tasks to project</li>
+          </ul>
+        </div>
+      </div>
     </section>
   </div>
-{% endblock %}
-
-{% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script>
-    const summary = {{ summary | tojson }};
-    const labels = summary.map((item) => item.label);
-    const values = summary.map((item) => item.seconds);
-    const ctx = document.getElementById("overview-chart");
-    let chartType = "bar";
-    let chartInstance = null;
-
-    const buildChart = (type) => {
-      if (!ctx) {
-        return;
-      }
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
-      chartInstance = new Chart(ctx, {
-        type,
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Total time",
-              data: values,
-              borderColor: "#1f6feb",
-              backgroundColor: type === "line" ? "rgba(31, 111, 235, 0.25)" : "#1f6feb",
-              borderWidth: 2,
-              tension: 0.35,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  const seconds = context.raw || 0;
-                  const hours = Math.floor(seconds / 3600);
-                  const minutes = Math.floor((seconds % 3600) / 60);
-                  return `${hours}h ${minutes}m`;
-                },
-              },
-            },
-          },
-          scales: {
-            y: {
-              ticks: {
-                callback: (value) => `${Math.floor(value / 3600)}h`,
-              },
-            },
-          },
-        },
-      });
-    };
-
-    buildChart(chartType);
-
-    document.querySelectorAll(".mode-button").forEach((button) => {
-      button.addEventListener("click", () => {
-        chartType = button.dataset.mode;
-        document.querySelectorAll(".mode-button").forEach((btn) =>
-          btn.classList.toggle("active", btn === button),
-        );
-        buildChart(chartType);
-      });
-    });
-  </script>
 {% endblock %}

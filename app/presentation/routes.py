@@ -60,6 +60,11 @@ def register_routes(app, service):
     def calendar():
         return render_template("calendar.html")
 
+    @app.route("/goals", methods=["GET"])
+    @auth_required()
+    def goals():
+        return render_template("goals.html")
+
     @app.route("/account", methods=["GET"])
     @auth_required()
     def account():
