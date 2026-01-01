@@ -67,6 +67,41 @@
         </div>
       </div>
     </section>
+    <section class="timer-range-section">
+      <div class="card pomodoro-card">
+        <div class="pomodoro-header">
+          <div>
+            <p class="pomodoro-label">Pomodoro</p>
+            <h2 class="pomodoro-mode" id="pomodoro-mode">Focus</h2>
+          </div>
+          <div class="pomodoro-dial" id="pomodoro-display">25:00</div>
+        </div>
+        <div class="pomodoro-controls">
+          <button class="btn btn-primary btn-sm" type="button" id="pomodoro-start">
+            <i class="bi bi-play-fill"></i>
+            Start
+          </button>
+          <button class="btn btn-outline-primary btn-sm" type="button" id="pomodoro-pause">
+            <i class="bi bi-pause-fill"></i>
+            Pause
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" id="pomodoro-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reset
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" id="pomodoro-skip">
+            <i class="bi bi-skip-forward-fill"></i>
+            Skip
+          </button>
+        </div>
+        <div class="pomodoro-presets">
+          <button class="btn btn-light btn-sm" type="button" data-pomodoro-mode="work">Focus 25</button>
+          <button class="btn btn-light btn-sm" type="button" data-pomodoro-mode="short">Break 5</button>
+          <button class="btn btn-light btn-sm" type="button" data-pomodoro-mode="long">Break 15</button>
+        </div>
+        <p class="pomodoro-meta" id="pomodoro-meta">Session 1 of 4</p>
+      </div>
+    </section>
     <section class="timer-calendar-section timer-view-panel is-active" data-view-panel="calendar">
       <div class="card timer-calendar-card">
         <div id="timer-calendar"></div>
@@ -241,6 +276,234 @@
           }
         });
       });
+
+      const pomodoroDisplay = document.getElementById("pomodoro-display");
+      const pomodoroMode = document.getElementById("pomodoro-mode");
+      const pomodoroMeta = document.getElementById("pomodoro-meta");
+      const startButton = document.getElementById("pomodoro-start");
+      const pauseButton = document.getElementById("pomodoro-pause");
+      const resetButton = document.getElementById("pomodoro-reset");
+      const skipButton = document.getElementById("pomodoro-skip");
+      const presetButtons = document.querySelectorAll("[data-pomodoro-mode]");
+
+      const presets = {
+        work: 25 * 60,
+        short: 5 * 60,
+        long: 15 * 60,
+      };
+
+      const storageKey = "pomodoroState";
+      let intervalId = null;
+
+      const defaultState = {
+        mode: "work",
+        remaining: presets.work,
+        isRunning: false,
+        completedWork: 0,
+        lastTick: null,
+      };
+
+      const loadState = () => {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) {
+            return { ...defaultState };
+          }
+          const parsed = JSON.parse(raw);
+          return {
+            ...defaultState,
+            ...parsed,
+          };
+        } catch (error) {
+          return { ...defaultState };
+        }
+      };
+
+      const saveState = (state) => {
+        localStorage.setItem(storageKey, JSON.stringify(state));
+      };
+
+      const formatClock = (seconds) => {
+        const safe = Math.max(0, Math.floor(seconds || 0));
+        const minutes = Math.floor(safe / 60);
+        const remaining = safe % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+      };
+
+      const modeLabel = (mode) => {
+        if (mode === "short") {
+          return "Short Break";
+        }
+        if (mode === "long") {
+          return "Long Break";
+        }
+        return "Focus";
+      };
+
+      const updatePomodoroUI = (state) => {
+        if (!pomodoroDisplay || !pomodoroMode || !pomodoroMeta) {
+          return;
+        }
+        pomodoroDisplay.textContent = formatClock(state.remaining);
+        pomodoroMode.textContent = modeLabel(state.mode);
+        const nextSession = (state.completedWork % 4) + 1;
+        pomodoroMeta.textContent = `Session ${nextSession} of 4`;
+        if (startButton) {
+          startButton.disabled = state.isRunning;
+        }
+        if (pauseButton) {
+          pauseButton.disabled = !state.isRunning;
+        }
+      };
+
+      const getNextMode = (state) => {
+        if (state.mode === "work") {
+          const nextWork = state.completedWork + 1;
+          return nextWork % 4 === 0 ? "long" : "short";
+        }
+        return "work";
+      };
+
+      const applyMode = (state, mode) => {
+        const duration = presets[mode];
+        return {
+          ...state,
+          mode,
+          remaining: duration,
+          isRunning: false,
+          lastTick: null,
+        };
+      };
+
+      const applyElapsed = (state, elapsedSeconds) => {
+        let remaining = state.remaining;
+        let mode = state.mode;
+        let completedWork = state.completedWork;
+        let secondsLeft = elapsedSeconds;
+
+        while (secondsLeft > 0) {
+          if (remaining > secondsLeft) {
+            remaining -= secondsLeft;
+            secondsLeft = 0;
+          } else {
+            secondsLeft -= remaining;
+            if (mode === "work") {
+              completedWork += 1;
+            }
+            mode = mode === "work" ? (completedWork % 4 === 0 ? "long" : "short") : "work";
+            remaining = presets[mode];
+          }
+        }
+
+        state.remaining = remaining;
+        state.mode = mode;
+        state.completedWork = completedWork;
+      };
+
+      const stopInterval = () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      };
+
+      const startInterval = (state) => {
+        stopInterval();
+        state.lastTick = Date.now();
+        intervalId = setInterval(() => {
+          const now = Date.now();
+          const elapsed = Math.max(1, Math.floor((now - (state.lastTick || now)) / 1000));
+          state.lastTick = now;
+          state.remaining -= elapsed;
+          if (state.remaining <= 0) {
+            state.remaining = 0;
+            state.isRunning = false;
+            if (state.mode === "work") {
+              state.completedWork += 1;
+            }
+            const nextMode = getNextMode(state);
+            const nextState = applyMode(state, nextMode);
+            state.mode = nextState.mode;
+            state.remaining = nextState.remaining;
+            state.lastTick = null;
+            stopInterval();
+          }
+          saveState(state);
+          updatePomodoroUI(state);
+        }, 1000);
+      };
+
+      if (pomodoroDisplay) {
+        const state = loadState();
+        if (state.isRunning && state.lastTick) {
+          const elapsed = Math.floor((Date.now() - state.lastTick) / 1000);
+          if (elapsed > 0) {
+            applyElapsed(state, elapsed);
+          }
+        }
+        updatePomodoroUI(state);
+        if (state.isRunning) {
+          startInterval(state);
+        }
+
+        startButton?.addEventListener("click", () => {
+          state.isRunning = true;
+          state.lastTick = Date.now();
+          saveState(state);
+          updatePomodoroUI(state);
+          startInterval(state);
+        });
+
+        pauseButton?.addEventListener("click", () => {
+          state.isRunning = false;
+          state.lastTick = null;
+          saveState(state);
+          updatePomodoroUI(state);
+          stopInterval();
+        });
+
+        resetButton?.addEventListener("click", () => {
+          state.mode = "work";
+          state.remaining = presets.work;
+          state.isRunning = false;
+          state.completedWork = 0;
+          state.lastTick = null;
+          saveState(state);
+          updatePomodoroUI(state);
+          stopInterval();
+        });
+
+        skipButton?.addEventListener("click", () => {
+          if (state.mode === "work") {
+            state.completedWork += 1;
+          }
+          const nextMode = getNextMode(state);
+          const nextState = applyMode(state, nextMode);
+          state.mode = nextState.mode;
+          state.remaining = nextState.remaining;
+          state.isRunning = false;
+          state.lastTick = null;
+          saveState(state);
+          updatePomodoroUI(state);
+          stopInterval();
+        });
+
+        presetButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const mode = button.dataset.pomodoroMode;
+            if (!mode || !presets[mode]) {
+              return;
+            }
+            state.mode = mode;
+            state.remaining = presets[mode];
+            state.isRunning = false;
+            state.lastTick = null;
+            saveState(state);
+            updatePomodoroUI(state);
+            stopInterval();
+          });
+        });
+      }
     });
   </script>
 {% endblock %}

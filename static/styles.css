@@ -1055,6 +1055,55 @@ body {
   box-shadow: 0 12px 28px rgba(31, 41, 55, 0.08);
 }
 
+.pomodoro-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pomodoro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pomodoro-label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pomodoro-mode {
+  margin: 4px 0 0;
+  font-size: 1.4rem;
+}
+
+.pomodoro-dial {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: rgba(31, 111, 235, 0.1);
+  color: #1f6feb;
+}
+
+.pomodoro-controls,
+.pomodoro-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pomodoro-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .timer-range-left,
 .timer-range-right {
   display: flex;
