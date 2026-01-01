@@ -36,19 +36,37 @@
           {% for project in projects %}
             <li class="task-item">
               <div class="task-info">
-                <a class="name-badge name-project" href="{{ url_for('project_detail', project_id=project['id']) }}">{{ project['name'] }}</a>
+                <div class="editable-field">
+                  <a class="name-badge name-project" href="{{ url_for('project_detail', project_id=project['id']) }}">{{ project['name'] }}</a>
+                  <button class="edit-toggle icon-button" type="button" aria-label="Edit project" data-edit-target="edit-project-{{ project['id'] }}">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                </div>
                 {% if project['labels'] %}
                   <div class="label-list">
                     {% for label in project['labels'] %}
-                      <span class="label-chip" style="background-color: {{ label['color'] }}">{{ label['name'] }}</span>
+                      <div class="editable-label">
+                        <span class="label-chip" style="background-color: {{ label['color'] }}">{{ label['name'] }}</span>
+                        <button class="edit-toggle icon-button" type="button" aria-label="Edit label" data-edit-target="edit-label-{{ label['id'] }}-project-{{ project['id'] }}">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <form id="edit-label-{{ label['id'] }}-project-{{ project['id'] }}" class="edit-form" method="post" action="{{ url_for('edit_label', label_id=label['id']) }}">
+                          <input type="text" name="name" value="{{ label['name'] }}" required />
+                          <input type="color" name="color" value="{{ label['color'] }}" aria-label="Label color" />
+                          <button class="btn btn-outline-secondary btn-sm" type="submit">
+                            <i class="bi bi-check2"></i>
+                            Save
+                          </button>
+                        </form>
+                      </div>
                     {% endfor %}
                   </div>
                 {% endif %}
-                <form class="task-form" method="post" action="{{ url_for('edit_project', project_id=project['id']) }}">
+                <form id="edit-project-{{ project['id'] }}" class="edit-form" method="post" action="{{ url_for('edit_project', project_id=project['id']) }}">
                   <input type="text" name="name" value="{{ project['name'] }}" required />
                   <button class="btn btn-outline-secondary btn-sm" type="submit">
-                    <i class="bi bi-pencil"></i>
-                    Update
+                    <i class="bi bi-check2"></i>
+                    Save
                   </button>
                 </form>
               </div>

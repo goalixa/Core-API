@@ -36,15 +36,53 @@ function updateTimeDisplay(taskId, rollingSeconds) {
   }
 }
 
-function renderLabelChips(labels) {
+function toggleEditForm(targetId) {
+  const form = document.getElementById(targetId);
+  if (!form) {
+    return;
+  }
+  const isOpen = form.classList.contains("is-open");
+  document.querySelectorAll(".edit-form.is-open").forEach((openForm) => {
+    if (openForm !== form) {
+      openForm.classList.remove("is-open");
+    }
+  });
+  form.classList.toggle("is-open", !isOpen);
+  if (!isOpen) {
+    const input = form.querySelector('input[type="text"]');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+}
+
+function renderLabelChips(labels, scopeId) {
   if (!labels || !labels.length) {
     return "";
   }
   return `<div class="label-list">
     ${labels
       .map(
-        (label) =>
-          `<span class="label-chip" style="background-color: ${escapeHtml(label.color)}">${escapeHtml(label.name)}</span>`,
+        (label) => {
+          const safeName = escapeHtml(label.name);
+          const safeColor = escapeHtml(label.color);
+          const formId = `edit-label-${label.id}-${scopeId}`;
+          return `<div class="editable-label">
+              <span class="label-chip" style="background-color: ${safeColor}">${safeName}</span>
+              <button class="edit-toggle icon-button" type="button" aria-label="Edit label" data-edit-target="${formId}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <form id="${formId}" class="edit-form" method="post" action="/labels/${label.id}/edit">
+                <input type="text" name="name" value="${safeName}" required />
+                <input type="color" name="color" value="${safeColor}" aria-label="Label color" />
+                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                  <i class="bi bi-check2"></i>
+                  Save
+                </button>
+              </form>
+            </div>`;
+        },
       )
       .join("")}
   </div>`;
@@ -68,12 +106,19 @@ function renderTasks(tasks) {
       const name = escapeHtml(task.name);
       const project = escapeHtml(task.project_name || "Unassigned");
       const time = formatSeconds(task.rolling_24h_seconds || 0);
-      const labels = renderLabelChips(task.labels || []);
-      const editForm = `<form class="task-form" method="post" action="/tasks/${task.id}/edit">
+      const labels = renderLabelChips(task.labels || [], `task-${task.id}`);
+      const editFormId = `edit-task-${task.id}`;
+      const editField = `<div class="editable-field">
+          <span class="name-badge name-task">${name}</span>
+          <button class="edit-toggle icon-button" type="button" aria-label="Edit task" data-edit-target="${editFormId}">
+            <i class="bi bi-pencil"></i>
+          </button>
+        </div>`;
+      const editForm = `<form id="${editFormId}" class="edit-form" method="post" action="/tasks/${task.id}/edit">
           <input type="text" name="name" value="${name}" required />
           <button class="btn btn-outline-secondary btn-sm" type="submit">
-            <i class="bi bi-pencil"></i>
-            Update
+            <i class="bi bi-check2"></i>
+            Save
           </button>
         </form>`;
       const action = task.is_running
@@ -108,7 +153,7 @@ function renderTasks(tasks) {
         </div>`;
       return `<li class="task-item">
                 <div class="task-info">
-                  <span class="name-badge name-task">${name}</span>
+                  ${editField}
                   <span class="task-project">${project}</span>
                   ${labels}
                   ${editForm}
@@ -285,6 +330,33 @@ document.addEventListener("DOMContentLoaded", () => {
       if (target) {
         target.classList.toggle("is-open");
       }
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const editButton = target.closest("[data-edit-target]");
+    if (editButton) {
+      event.preventDefault();
+      toggleEditForm(editButton.dataset.editTarget);
+      return;
+    }
+    if (!target.closest(".edit-form")) {
+      document.querySelectorAll(".edit-form.is-open").forEach((formEl) => {
+        formEl.classList.remove("is-open");
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+    document.querySelectorAll(".edit-form.is-open").forEach((formEl) => {
+      formEl.classList.remove("is-open");
     });
   });
 });

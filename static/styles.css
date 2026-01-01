@@ -227,6 +227,53 @@ body {
   flex: 1;
 }
 
+.editable-field,
+.editable-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-toggle {
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  transition: opacity 0.15s ease;
+}
+
+.editable-field:hover .edit-toggle,
+.editable-label:hover .edit-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.edit-form {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-form.is-open {
+  display: flex;
+}
+
+.edit-form input[type="text"] {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.edit-form input[type="color"] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
 .task-name {
   font-weight: 600;
 }
@@ -1606,5 +1653,10 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  .edit-toggle {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
