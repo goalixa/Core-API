@@ -5,13 +5,11 @@ function escapeHtml(value) {
 }
 
 function formatSeconds(totalSeconds) {
-  const days = Math.floor(totalSeconds / 86400);
-  const remainder = totalSeconds % 86400;
-  const hours = Math.floor(remainder / 3600);
-  const minutes = Math.floor((remainder % 3600) / 60);
-  const seconds = remainder % 60;
-  const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  return days ? `${days}d ${time}` : time;
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 let tasksState = new Map();
@@ -24,17 +22,17 @@ function setTasksState(tasks) {
     tasks.map((task) => [
       String(task.id),
       {
-        totalSeconds: Number(task.total_seconds || 0),
+        rollingSeconds: Number(task.rolling_24h_seconds || 0),
         isRunning: Boolean(task.is_running),
       },
     ]),
   );
 }
 
-function updateTimeDisplay(taskId, totalSeconds) {
+function updateTimeDisplay(taskId, rollingSeconds) {
   const timeEl = document.querySelector(`.task-time[data-task-id="${taskId}"]`);
   if (timeEl) {
-    timeEl.textContent = formatSeconds(totalSeconds);
+    timeEl.textContent = formatSeconds(rollingSeconds);
   }
 }
 
@@ -162,8 +160,8 @@ function startLiveTimer() {
       if (!state.isRunning) {
         continue;
       }
-      state.totalSeconds += 1;
-      updateTimeDisplay(taskId, state.totalSeconds);
+      state.rollingSeconds = Math.min(86400, state.rollingSeconds + 1);
+      updateTimeDisplay(taskId, state.rollingSeconds);
     }
   }, 1000);
 }
