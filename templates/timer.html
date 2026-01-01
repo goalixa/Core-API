@@ -99,6 +99,7 @@
           <button class="btn btn-light btn-sm" type="button" data-pomodoro-mode="short">Break 5</button>
           <button class="btn btn-light btn-sm" type="button" data-pomodoro-mode="long">Break 15</button>
         </div>
+        <p class="pomodoro-task" id="pomodoro-task">No task selected</p>
         <p class="pomodoro-meta" id="pomodoro-meta">Session 1 of 4</p>
       </div>
     </section>
@@ -211,6 +212,10 @@
       const panels = document.querySelectorAll("[data-view-panel]");
       const buttons = document.querySelectorAll("[data-view-button]");
       const calendarEl = document.getElementById("timer-calendar");
+      const taskPicker = document.getElementById("task-picker");
+      const taskDropdown = document.querySelector(".timer-dropdown");
+      const taskSearch = document.querySelector(".timer-search");
+      const taskList = document.querySelector(".timer-list");
       const calendar =
         calendarEl && typeof FullCalendar !== "undefined"
           ? new FullCalendar.Calendar(calendarEl, {
@@ -279,6 +284,7 @@
 
       const pomodoroDisplay = document.getElementById("pomodoro-display");
       const pomodoroMode = document.getElementById("pomodoro-mode");
+      const pomodoroTask = document.getElementById("pomodoro-task");
       const pomodoroMeta = document.getElementById("pomodoro-meta");
       const startButton = document.getElementById("pomodoro-start");
       const pauseButton = document.getElementById("pomodoro-pause");
@@ -301,6 +307,8 @@
         isRunning: false,
         completedWork: 0,
         lastTick: null,
+        taskId: null,
+        taskRunning: false,
       };
 
       const loadState = () => {
@@ -348,6 +356,11 @@
         pomodoroMode.textContent = modeLabel(state.mode);
         const nextSession = (state.completedWork % 4) + 1;
         pomodoroMeta.textContent = `Session ${nextSession} of 4`;
+        if (pomodoroTask) {
+          pomodoroTask.textContent = state.taskName
+            ? `Task: ${state.taskName}`
+            : "No task selected";
+        }
         if (startButton) {
           startButton.disabled = state.isRunning;
         }
@@ -372,10 +385,12 @@
           remaining: duration,
           isRunning: false,
           lastTick: null,
+          taskRunning: false,
         };
       };
 
       const applyElapsed = (state, elapsedSeconds) => {
+        const startingRemaining = state.remaining;
         let remaining = state.remaining;
         let mode = state.mode;
         let completedWork = state.completedWork;
@@ -398,12 +413,45 @@
         state.remaining = remaining;
         state.mode = mode;
         state.completedWork = completedWork;
+        if (elapsedSeconds >= startingRemaining) {
+          state.isRunning = false;
+          state.lastTick = null;
+          state.taskRunning = false;
+        }
       };
 
       const stopInterval = () => {
         if (intervalId) {
           clearInterval(intervalId);
           intervalId = null;
+        }
+      };
+
+      const startTaskTimer = async (state) => {
+        if (!state.taskId || state.taskRunning) {
+          return;
+        }
+        state.taskRunning = true;
+        saveState(state);
+        try {
+          await fetch(`/api/tasks/${state.taskId}/start`, { method: "POST" });
+        } catch (error) {
+          state.taskRunning = false;
+          saveState(state);
+          console.error(error);
+        }
+      };
+
+      const stopTaskTimer = async (state) => {
+        if (!state.taskId || !state.taskRunning) {
+          return;
+        }
+        state.taskRunning = false;
+        saveState(state);
+        try {
+          await fetch(`/api/tasks/${state.taskId}/stop`, { method: "POST" });
+        } catch (error) {
+          console.error(error);
         }
       };
 
@@ -416,6 +464,9 @@
           state.lastTick = now;
           state.remaining -= elapsed;
           if (state.remaining <= 0) {
+            if (state.mode === "work") {
+              stopTaskTimer(state);
+            }
             state.remaining = 0;
             state.isRunning = false;
             if (state.mode === "work") {
@@ -435,6 +486,7 @@
 
       if (pomodoroDisplay) {
         const state = loadState();
+        state.taskName = state.taskName || null;
         if (state.isRunning && state.lastTick) {
           const elapsed = Math.floor((Date.now() - state.lastTick) / 1000);
           if (elapsed > 0) {
@@ -447,8 +499,15 @@
         }
 
         startButton?.addEventListener("click", () => {
+          if (state.mode === "work" && !state.taskId) {
+            alert("Select a task for this Pomodoro.");
+            return;
+          }
           state.isRunning = true;
           state.lastTick = Date.now();
+          if (state.mode === "work") {
+            startTaskTimer(state);
+          }
           saveState(state);
           updatePomodoroUI(state);
           startInterval(state);
@@ -457,6 +516,7 @@
         pauseButton?.addEventListener("click", () => {
           state.isRunning = false;
           state.lastTick = null;
+          stopTaskTimer(state);
           saveState(state);
           updatePomodoroUI(state);
           stopInterval();
@@ -468,6 +528,7 @@
           state.isRunning = false;
           state.completedWork = 0;
           state.lastTick = null;
+          stopTaskTimer(state);
           saveState(state);
           updatePomodoroUI(state);
           stopInterval();
@@ -477,6 +538,7 @@
           if (state.mode === "work") {
             state.completedWork += 1;
           }
+          stopTaskTimer(state);
           const nextMode = getNextMode(state);
           const nextState = applyMode(state, nextMode);
           state.mode = nextState.mode;
@@ -494,6 +556,7 @@
             if (!mode || !presets[mode]) {
               return;
             }
+            stopTaskTimer(state);
             state.mode = mode;
             state.remaining = presets[mode];
             state.isRunning = false;
@@ -503,6 +566,131 @@
             stopInterval();
           });
         });
+
+        const formatSeconds = (totalSeconds) => {
+          const safe = Math.max(0, Math.floor(totalSeconds || 0));
+          const hours = Math.floor(safe / 3600);
+          const minutes = Math.floor((safe % 3600) / 60);
+          const seconds = safe % 60;
+          return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        };
+
+        const escapeHtml = (value) => {
+          const div = document.createElement("div");
+          div.textContent = value;
+          return div.innerHTML;
+        };
+
+        const renderTasks = (tasks, query) => {
+          if (!taskList) {
+            return;
+          }
+          const term = (query || "").toLowerCase();
+          const filtered = tasks.filter((task) => {
+            const name = (task.name || "").toLowerCase();
+            const project = (task.project_name || "").toLowerCase();
+            return !term || name.includes(term) || project.includes(term);
+          });
+          if (!filtered.length) {
+            taskList.innerHTML = "<div class=\"timer-empty-state\">No tasks found.</div>";
+            return;
+          }
+          taskList.innerHTML = filtered
+            .map((task) => {
+              const name = escapeHtml(task.name || "");
+              const projectName = task.project_name ? escapeHtml(task.project_name) : "";
+              const project = projectName ? ` • ${projectName}` : "";
+              const total = formatSeconds(task.total_seconds || 0);
+              return `<button type="button" data-task-id="${task.id}">${name}${project} · ${total}</button>`;
+            })
+            .join("");
+        };
+
+        const openDropdown = () => {
+          taskDropdown?.classList.add("is-open");
+        };
+
+        const closeDropdown = () => {
+          taskDropdown?.classList.remove("is-open");
+        };
+
+        if (taskPicker && taskDropdown && taskSearch && taskList) {
+          fetch("/api/tasks")
+            .then((response) => response.json())
+            .then((payload) => {
+              const tasks = (payload.tasks || []).sort(
+                (a, b) => (b.total_seconds || 0) - (a.total_seconds || 0),
+              );
+              if (state.taskId) {
+                const current = tasks.find((task) => String(task.id) === String(state.taskId));
+                if (current) {
+                  taskPicker.value = current.name;
+                  state.taskName = current.name;
+                  updatePomodoroUI(state);
+                }
+              }
+              renderTasks(tasks, taskSearch.value);
+
+              taskPicker.addEventListener("focus", () => {
+                openDropdown();
+              });
+
+              taskPicker.addEventListener("click", () => {
+                openDropdown();
+              });
+
+              taskSearch.addEventListener("input", () => {
+                renderTasks(tasks, taskSearch.value);
+              });
+
+              taskList.addEventListener("click", (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                  return;
+                }
+                const button = target.closest("button[data-task-id]");
+                if (!button) {
+                  return;
+                }
+                const taskId = button.dataset.taskId;
+                const selected = tasks.find((task) => String(task.id) === String(taskId));
+                if (!selected) {
+                  return;
+                }
+                const previousTaskId = state.taskId;
+                state.taskId = selected.id;
+                state.taskName = selected.name;
+                taskPicker.value = selected.name;
+                taskSearch.value = "";
+                renderTasks(tasks, "");
+                closeDropdown();
+                saveState(state);
+                updatePomodoroUI(state);
+
+                if (state.isRunning && state.mode === "work") {
+                  if (previousTaskId && previousTaskId !== state.taskId) {
+                    stopTaskTimer(state);
+                  }
+                  startTaskTimer(state);
+                }
+              });
+
+              document.addEventListener("click", (event) => {
+                if (!(event.target instanceof HTMLElement)) {
+                  return;
+                }
+                if (
+                  !event.target.closest(".timer-select") &&
+                  !event.target.closest(".timer-dropdown")
+                ) {
+                  closeDropdown();
+                }
+              });
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+        }
       }
     });
   </script>

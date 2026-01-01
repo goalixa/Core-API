@@ -1104,6 +1104,13 @@ body {
   font-size: 0.9rem;
 }
 
+.pomodoro-task {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .timer-range-left,
 .timer-range-right {
   display: flex;
