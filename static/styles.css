@@ -427,6 +427,11 @@ body {
   gap: 12px;
 }
 
+.habit-item {
+  display: grid;
+  gap: 10px;
+}
+
 .habit-row {
   display: flex;
   align-items: center;
@@ -437,6 +442,16 @@ body {
   border: 1px solid var(--border);
   background: #ffffff;
   cursor: pointer;
+}
+
+.habit-row.is-done .habit-name {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.habit-toggle {
+  margin: 0;
+  flex: 1;
 }
 
 .habit-left {
@@ -512,10 +527,44 @@ body {
   gap: 6px;
 }
 
+.habit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.habit-actions .icon-button {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.habit-actions .icon-button.danger {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.inline-form {
+  margin: 0;
+}
+
 .habit-create-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.habit-edit-form {
+  display: none;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed var(--border);
+}
+
+.habit-edit-form.is-open {
+  display: grid;
 }
 
 .habit-create-card.is-hidden {

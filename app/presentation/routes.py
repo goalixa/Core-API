@@ -72,19 +72,57 @@ def register_routes(app, service):
     @app.route("/habits", methods=["GET"])
     @auth_required()
     def habits():
-        habits_list = [
-            {"id": 1, "name": "Morning review", "schedule": "Daily", "streak": 6, "done": False},
-            {"id": 2, "name": "Study AWS basics", "schedule": "Mon, Wed, Fri", "streak": 3, "done": True},
-            {"id": 3, "name": "Plan tomorrow", "schedule": "Daily", "streak": 12, "done": False},
-            {"id": 4, "name": "Stretch break", "schedule": "Daily", "streak": 21, "done": True},
-        ]
-        completed = len([habit for habit in habits_list if habit["done"]])
+        today = datetime.utcnow().date().isoformat()
+        habits_list = service.list_habits(today)
+        summary = service.habits_summary(habits_list)
         return render_template(
             "habits.html",
             habits=habits_list,
-            total_habits=len(habits_list),
-            completed_habits=completed,
+            total_habits=summary["total"],
+            completed_habits=summary["completed"],
+            best_streak=summary["best_streak"],
+            focus_window=summary["focus_window"],
+            today=today,
         )
+
+    @app.route("/habits", methods=["POST"])
+    @auth_required()
+    def create_habit():
+        service.add_habit(
+            request.form.get("name", ""),
+            request.form.get("frequency", "Daily"),
+            request.form.get("time_of_day", ""),
+            request.form.get("reminder", ""),
+            request.form.get("notes", ""),
+        )
+        return redirect(url_for("habits"))
+
+    @app.route("/habits/<int:habit_id>/toggle", methods=["POST"])
+    @auth_required()
+    def toggle_habit(habit_id):
+        log_date = request.form.get("date") or datetime.utcnow().date().isoformat()
+        done = request.form.get("done") in {"1", "on", "true"}
+        service.set_habit_done(habit_id, log_date, done)
+        return redirect(url_for("habits"))
+
+    @app.route("/habits/<int:habit_id>/update", methods=["POST"])
+    @auth_required()
+    def update_habit(habit_id):
+        service.update_habit(
+            habit_id,
+            request.form.get("name", ""),
+            request.form.get("frequency", "Daily"),
+            request.form.get("time_of_day", ""),
+            request.form.get("reminder", ""),
+            request.form.get("notes", ""),
+        )
+        return redirect(url_for("habits"))
+
+    @app.route("/habits/<int:habit_id>/delete", methods=["POST"])
+    @auth_required()
+    def delete_habit(habit_id):
+        service.delete_habit(habit_id)
+        return redirect(url_for("habits"))
 
     @app.route("/goals", methods=["GET"])
     @auth_required()

@@ -23,12 +23,12 @@
       </div>
       <div class="habit-stat-card">
         <span class="habit-stat-label">Daily streak</span>
-        <span class="habit-stat-value">7 days</span>
-        <span class="habit-stat-meta">Keep the chain moving</span>
+        <span class="habit-stat-value">{{ best_streak or 0 }} days</span>
+        <span class="habit-stat-meta">Best active chain</span>
       </div>
       <div class="habit-stat-card">
         <span class="habit-stat-label">Focus ritual</span>
-        <span class="habit-stat-value">Night close</span>
+        <span class="habit-stat-value">{{ focus_window or "Night close" }}</span>
         <span class="habit-stat-meta">Mark done before sleep</span>
       </div>
     </section>
@@ -47,22 +47,80 @@
       <div class="habit-list" id="habit-list">
         {% if habits %}
           {% for habit in habits %}
-            <label class="habit-row">
-              <span class="habit-left">
-                <span class="habit-checkbox">
-                  <input type="checkbox" {% if habit['done'] %}checked{% endif %} />
-                  <span class="habit-checkmark"></span>
-                </span>
-                <span class="habit-text">
-                  <span class="habit-name">{{ habit['name'] }}</span>
-                  <span class="habit-meta">{{ habit['schedule'] }}</span>
-                </span>
-              </span>
-              <span class="habit-streak">
-                <i class="bi bi-fire"></i>
-                {{ habit['streak'] }} day streak
-              </span>
-            </label>
+            <div class="habit-item">
+              <div class="habit-row {% if habit['done'] %}is-done{% endif %}">
+                <form class="habit-toggle" method="post" action="{{ url_for('toggle_habit', habit_id=habit['id']) }}">
+                  <input type="hidden" name="date" value="{{ today }}" />
+                  <label class="habit-left">
+                    <span class="habit-checkbox">
+                      <input type="checkbox" name="done" {% if habit['done'] %}checked{% endif %} onchange="this.form.submit()" />
+                      <span class="habit-checkmark"></span>
+                    </span>
+                    <span class="habit-text">
+                      <span class="habit-name">{{ habit['name'] }}</span>
+                      <span class="habit-meta">{{ habit['meta'] }}</span>
+                    </span>
+                  </label>
+                </form>
+                <div class="habit-actions">
+                  <span class="habit-streak">
+                    <i class="bi bi-fire"></i>
+                    {{ habit['streak'] }} day streak
+                  </span>
+                  <button class="icon-button edit-toggle" type="button" aria-label="Edit habit" data-edit-target="edit-habit-{{ habit['id'] }}">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <form class="inline-form" method="post" action="{{ url_for('delete_habit', habit_id=habit['id']) }}">
+                    <button class="icon-button danger" type="submit" aria-label="Delete habit">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <form id="edit-habit-{{ habit['id'] }}" class="edit-form habit-edit-form" method="post" action="{{ url_for('update_habit', habit_id=habit['id']) }}">
+                <div class="goal-form-row">
+                  <label>
+                    Habit name
+                    <input type="text" name="name" value="{{ habit['name'] }}" required />
+                  </label>
+                  <label>
+                    Frequency
+                    <select name="frequency">
+                      <option value="Daily" {% if habit['frequency'] == 'Daily' %}selected{% endif %}>Daily</option>
+                      <option value="Weekdays" {% if habit['frequency'] == 'Weekdays' %}selected{% endif %}>Weekdays</option>
+                      <option value="Weekends" {% if habit['frequency'] == 'Weekends' %}selected{% endif %}>Weekends</option>
+                      <option value="Custom" {% if habit['frequency'] == 'Custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="goal-form-row">
+                  <label>
+                    Best time
+                    <select name="time_of_day">
+                      <option value="" {% if not habit['time_of_day'] %}selected{% endif %}>Anytime</option>
+                      <option value="Morning" {% if habit['time_of_day'] == 'Morning' %}selected{% endif %}>Morning</option>
+                      <option value="Afternoon" {% if habit['time_of_day'] == 'Afternoon' %}selected{% endif %}>Afternoon</option>
+                      <option value="Evening" {% if habit['time_of_day'] == 'Evening' %}selected{% endif %}>Evening</option>
+                    </select>
+                  </label>
+                  <label>
+                    Reminder
+                    <select name="reminder">
+                      <option value="" {% if not habit['reminder'] %}selected{% endif %}>None</option>
+                      <option value="21:00" {% if habit['reminder'] == '21:00' %}selected{% endif %}>21:00</option>
+                      <option value="22:30" {% if habit['reminder'] == '22:30' %}selected{% endif %}>22:30</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Notes
+                  <textarea rows="2" name="notes">{{ habit['notes'] or '' }}</textarea>
+                </label>
+                <div class="goal-form-actions">
+                  <button class="btn btn-outline-secondary btn-sm" type="submit">Save changes</button>
+                </div>
+              </form>
+            </div>
           {% endfor %}
         {% else %}
           <p class="empty">No habits yet.</p>
@@ -71,43 +129,44 @@
     </section>
 
     <section class="card habit-create-card is-hidden" id="habit-create">
-      <form class="habit-form" id="habit-form">
+      <form class="habit-form" id="habit-form" method="post" action="{{ url_for('create_habit') }}">
         <div class="goal-form-row">
           <label>
             Habit name
-            <input type="text" name="habit_name" placeholder="Review day plan" required />
+            <input type="text" name="name" placeholder="Review day plan" required />
           </label>
           <label>
             Frequency
-            <select name="habit_frequency">
-              <option>Daily</option>
-              <option>Weekdays</option>
-              <option>Weekends</option>
-              <option>Custom</option>
+            <select name="frequency">
+              <option value="Daily">Daily</option>
+              <option value="Weekdays">Weekdays</option>
+              <option value="Weekends">Weekends</option>
+              <option value="Custom">Custom</option>
             </select>
           </label>
         </div>
         <div class="goal-form-row">
           <label>
             Best time
-            <select name="habit_time">
-              <option>Morning</option>
-              <option>Afternoon</option>
-              <option>Evening</option>
+            <select name="time_of_day">
+              <option value="">Anytime</option>
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Evening">Evening</option>
             </select>
           </label>
           <label>
             Reminder
-            <select name="habit_reminder">
-              <option>None</option>
-              <option>21:00</option>
-              <option>22:30</option>
+            <select name="reminder">
+              <option value="">None</option>
+              <option value="21:00">21:00</option>
+              <option value="22:30">22:30</option>
             </select>
           </label>
         </div>
         <label>
           Notes
-          <textarea rows="2" name="habit_notes" placeholder="Why is this habit important?"></textarea>
+          <textarea rows="2" name="notes" placeholder="Why is this habit important?"></textarea>
         </label>
         <div class="goal-form-actions">
           <button class="btn btn-outline-secondary btn-sm" type="reset">Reset</button>
@@ -121,18 +180,13 @@
 {% block scripts %}
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("habit-form");
-      const list = document.getElementById("habit-list");
-      if (!form || !list) {
-        return;
-      }
       const toggleButton = document.querySelector("[data-habit-toggle]");
       const createPanel = document.getElementById("habit-create");
       if (toggleButton && createPanel) {
         toggleButton.addEventListener("click", () => {
           const isHidden = createPanel.classList.toggle("is-hidden");
           if (!isHidden) {
-            const input = createPanel.querySelector('input[name="habit_name"]');
+            const input = createPanel.querySelector('input[name="name"]');
             if (input) {
               input.focus();
             }
@@ -140,35 +194,49 @@
         });
       }
 
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const name = form.habit_name?.value?.trim();
-        if (!name) {
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
           return;
         }
-        const schedule = form.habit_frequency?.value || "Daily";
-        const row = document.createElement("label");
-        row.className = "habit-row";
-        row.innerHTML = `
-          <span class="habit-left">
-            <span class="habit-checkbox">
-              <input type="checkbox" />
-              <span class="habit-checkmark"></span>
-            </span>
-            <span class="habit-text">
-              <span class="habit-name"></span>
-              <span class="habit-meta"></span>
-            </span>
-          </span>
-          <span class="habit-streak">
-            <i class="bi bi-fire"></i>
-            0 day streak
-          </span>
-        `;
-        row.querySelector(".habit-name").textContent = name;
-        row.querySelector(".habit-meta").textContent = schedule;
-        list.appendChild(row);
-        form.reset();
+        const editButton = target.closest("[data-edit-target]");
+        if (editButton) {
+          event.preventDefault();
+          const targetId = editButton.dataset.editTarget;
+          const form = document.getElementById(targetId);
+          if (!form) {
+            return;
+          }
+          const isOpen = form.classList.contains("is-open");
+          document.querySelectorAll(".habit-edit-form.is-open").forEach((openForm) => {
+            if (openForm !== form) {
+              openForm.classList.remove("is-open");
+            }
+          });
+          form.classList.toggle("is-open", !isOpen);
+          if (!isOpen) {
+            const input = form.querySelector('input[type="text"]');
+            if (input) {
+              input.focus();
+              input.select();
+            }
+          }
+          return;
+        }
+        if (!target.closest(".habit-edit-form")) {
+          document.querySelectorAll(".habit-edit-form.is-open").forEach((openForm) => {
+            openForm.classList.remove("is-open");
+          });
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") {
+          return;
+        }
+        document.querySelectorAll(".habit-edit-form.is-open").forEach((openForm) => {
+          openForm.classList.remove("is-open");
+        });
       });
     });
   </script>

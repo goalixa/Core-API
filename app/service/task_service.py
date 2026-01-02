@@ -14,6 +14,26 @@ class TaskService:
                 cleaned.append(title)
         return cleaned
 
+    def _habit_streak(self, done_dates, today):
+        if not done_dates:
+            return 0
+        cursor = today
+        if cursor.isoformat() not in done_dates:
+            cursor = today - timedelta(days=1)
+        streak = 0
+        while cursor.isoformat() in done_dates:
+            streak += 1
+            cursor = cursor - timedelta(days=1)
+        return streak
+
+    def _most_common(self, values, fallback=""):
+        if not values:
+            return fallback
+        counts = {}
+        for value in values:
+            counts[value] = counts.get(value, 0) + 1
+        return max(counts.items(), key=lambda item: item[1])[0]
+
     def init_db(self):
         self.repository.init_db()
         default_project_id = self.repository.ensure_default_project(
@@ -590,3 +610,84 @@ class TaskService:
 
     def delete_task(self, task_id):
         self.repository.delete_task(task_id)
+
+    def list_habits(self, log_date):
+        habits = self.repository.fetch_habits()
+        if not habits:
+            return []
+        habit_ids = [habit["id"] for habit in habits]
+        done_today = self.repository.fetch_habit_logs_for_date(habit_ids, log_date)
+        logs_map = self.repository.fetch_habit_logs_map(habit_ids)
+        today = datetime.fromisoformat(log_date).date()
+        habit_list = []
+        for habit in habits:
+            habit_id = habit["id"]
+            done_dates = logs_map.get(habit_id, set())
+            streak = self._habit_streak(done_dates, today)
+            meta_parts = [habit["frequency"]]
+            if habit["time_of_day"]:
+                meta_parts.append(habit["time_of_day"])
+            habit_list.append(
+                {
+                    **dict(habit),
+                    "done": habit_id in done_today,
+                    "streak": streak,
+                    "meta": " • ".join(meta_parts),
+                }
+            )
+        return habit_list
+
+    def habits_summary(self, habits):
+        completed = sum(1 for habit in habits if habit.get("done"))
+        total = len(habits)
+        best_streak = max((habit.get("streak", 0) for habit in habits), default=0)
+        focus_window = self._most_common(
+            [habit.get("time_of_day") for habit in habits if habit.get("time_of_day")],
+            fallback="Night close",
+        )
+        return {
+            "completed": completed,
+            "total": total,
+            "best_streak": best_streak,
+            "focus_window": focus_window,
+        }
+
+    def add_habit(self, name, frequency, time_of_day, reminder, notes):
+        name = (name or "").strip()
+        frequency = (frequency or "Daily").strip()
+        time_of_day = (time_of_day or "").strip() or None
+        reminder = (reminder or "").strip() or None
+        notes = (notes or "").strip() or None
+        if not name:
+            return
+        self.repository.create_habit(
+            name,
+            frequency,
+            time_of_day,
+            reminder,
+            notes,
+            datetime.utcnow().isoformat(),
+        )
+
+    def update_habit(self, habit_id, name, frequency, time_of_day, reminder, notes):
+        name = (name or "").strip()
+        frequency = (frequency or "Daily").strip()
+        time_of_day = (time_of_day or "").strip() or None
+        reminder = (reminder or "").strip() or None
+        notes = (notes or "").strip() or None
+        if not name:
+            return
+        self.repository.update_habit(
+            int(habit_id),
+            name,
+            frequency,
+            time_of_day,
+            reminder,
+            notes,
+        )
+
+    def delete_habit(self, habit_id):
+        self.repository.delete_habit(int(habit_id))
+
+    def set_habit_done(self, habit_id, log_date, done):
+        self.repository.set_habit_log(int(habit_id), log_date, done)

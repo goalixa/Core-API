@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 from flask import g
 
@@ -101,6 +102,25 @@ class SQLiteTaskRepository:
                 status TEXT NOT NULL DEFAULT 'pending',
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (goal_id) REFERENCES goals (id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS habits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                frequency TEXT NOT NULL,
+                time_of_day TEXT,
+                reminder TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS habit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                habit_id INTEGER NOT NULL,
+                log_date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE (habit_id, log_date),
+                FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE
             );
             """
         )
@@ -516,6 +536,97 @@ class SQLiteTaskRepository:
                 VALUES (?, ?, ?, ?)
                 """,
                 (goal_id, title, "pending", created_at),
+            )
+        db.commit()
+
+    def fetch_habits(self):
+        db = self._get_db()
+        return db.execute(
+            """
+            SELECT id, name, frequency, time_of_day, reminder, notes, created_at
+            FROM habits
+            ORDER BY created_at DESC
+            """
+        ).fetchall()
+
+    def create_habit(self, name, frequency, time_of_day, reminder, notes, created_at):
+        db = self._get_db()
+        db.execute(
+            """
+            INSERT INTO habits (name, frequency, time_of_day, reminder, notes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (name, frequency, time_of_day, reminder, notes, created_at),
+        )
+        db.commit()
+        return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    def update_habit(self, habit_id, name, frequency, time_of_day, reminder, notes):
+        db = self._get_db()
+        db.execute(
+            """
+            UPDATE habits
+            SET name = ?, frequency = ?, time_of_day = ?, reminder = ?, notes = ?
+            WHERE id = ?
+            """,
+            (name, frequency, time_of_day, reminder, notes, habit_id),
+        )
+        db.commit()
+
+    def delete_habit(self, habit_id):
+        db = self._get_db()
+        db.execute("DELETE FROM habit_logs WHERE habit_id = ?", (habit_id,))
+        db.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+        db.commit()
+
+    def fetch_habit_logs_for_date(self, habit_ids, log_date):
+        if not habit_ids:
+            return set()
+        db = self._get_db()
+        placeholders = ",".join(["?"] * len(habit_ids))
+        rows = db.execute(
+            f"""
+            SELECT habit_id
+            FROM habit_logs
+            WHERE habit_id IN ({placeholders}) AND log_date = ?
+            """,
+            tuple(habit_ids) + (log_date,),
+        ).fetchall()
+        return {row["habit_id"] for row in rows}
+
+    def fetch_habit_logs_map(self, habit_ids):
+        if not habit_ids:
+            return {}
+        db = self._get_db()
+        placeholders = ",".join(["?"] * len(habit_ids))
+        rows = db.execute(
+            f"""
+            SELECT habit_id, log_date
+            FROM habit_logs
+            WHERE habit_id IN ({placeholders})
+            ORDER BY log_date DESC
+            """,
+            tuple(habit_ids),
+        ).fetchall()
+        mapping = {}
+        for row in rows:
+            mapping.setdefault(row["habit_id"], set()).add(row["log_date"])
+        return mapping
+
+    def set_habit_log(self, habit_id, log_date, done):
+        db = self._get_db()
+        if done:
+            db.execute(
+                """
+                INSERT OR IGNORE INTO habit_logs (habit_id, log_date, created_at)
+                VALUES (?, ?, ?)
+                """,
+                (habit_id, log_date, datetime.utcnow().isoformat()),
+            )
+        else:
+            db.execute(
+                "DELETE FROM habit_logs WHERE habit_id = ? AND log_date = ?",
+                (habit_id, log_date),
             )
         db.commit()
 
