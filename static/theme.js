@@ -1,6 +1,8 @@
 (() => {
   const storageKey = "theme";
+  const sidebarKey = "sidebar";
   const root = document.documentElement;
+  const body = document.body;
   const openDropdowns = () => {
     document.querySelectorAll(".timer-dropdown").forEach((dropdown) => {
       dropdown.classList.add("is-open");
@@ -18,14 +20,40 @@
     root.setAttribute("data-theme", saved);
   }
 
+  const setSidebarState = (state) => {
+    if (!body) {
+      return;
+    }
+    if (state === "collapsed") {
+      body.setAttribute("data-sidebar", "collapsed");
+    } else {
+      body.removeAttribute("data-sidebar");
+    }
+    document.querySelectorAll("[data-sidebar-toggle]").forEach((button) => {
+      button.setAttribute("aria-pressed", state === "collapsed" ? "true" : "false");
+    });
+  };
+
+  const savedSidebar = localStorage.getItem(sidebarKey);
+  if (savedSidebar) {
+    setSidebarState(savedSidebar);
+  }
+
   document.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
     }
     const button = target.closest("[data-theme-toggle]");
+    const sidebarButton = target.closest("[data-sidebar-toggle]");
     if (button) {
       toggle();
+    }
+    if (sidebarButton) {
+      const current = body?.getAttribute("data-sidebar") === "collapsed" ? "collapsed" : "expanded";
+      const next = current === "collapsed" ? "expanded" : "collapsed";
+      setSidebarState(next);
+      localStorage.setItem(sidebarKey, next);
     }
     if (target.closest(".timer-select")) {
       openDropdowns();

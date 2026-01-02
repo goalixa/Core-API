@@ -11,42 +11,84 @@
 </head>
 <body>
   <div class="container-fluid">
-    <div class="row min-vh-100">
+    <div class="row min-vh-100 app-shell">
       <aside class="sidebar col-12 col-lg-2 px-3 py-4">
-        <div class="sidebar-brand">StudyTimmer</div>
+        <div class="sidebar-header">
+          <div class="sidebar-brand">
+            <span class="sidebar-brand-mark">ST</span>
+            <span class="sidebar-brand-text">StudyTimmer</span>
+          </div>
+          <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Toggle sidebar" aria-pressed="false">
+            <i class="bi bi-layout-sidebar-inset"></i>
+          </button>
+        </div>
         <div class="sidebar-section">
           <span class="sidebar-title">Track</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('overview') }}"><i class="bi bi-bar-chart-line"></i>Overview</a>
-            <a class="sidebar-link {% if active_page == 'timer' %}active{% endif %}" href="{{ url_for('timer') }}"><i class="bi bi-stopwatch"></i>Timer</a>
-            <a class="sidebar-link {% if active_page == 'calendar' %}active{% endif %}" href="{{ url_for('calendar') }}"><i class="bi bi-calendar-week"></i>Calendar</a>
-            <a class="sidebar-link {% if active_page == 'goals' %}active{% endif %}" href="{{ url_for('goals') }}"><i class="bi bi-bullseye"></i>Goals</a>
+            <a class="sidebar-link {% if active_page == 'overview' %}active{% endif %}" href="{{ url_for('overview') }}"><i class="bi bi-bar-chart-line"></i><span class="sidebar-link-label">Overview</span></a>
+            <a class="sidebar-link {% if active_page == 'timer' %}active{% endif %}" href="{{ url_for('timer') }}"><i class="bi bi-stopwatch"></i><span class="sidebar-link-label">Timer</span></a>
+            <a class="sidebar-link {% if active_page == 'calendar' %}active{% endif %}" href="{{ url_for('calendar') }}"><i class="bi bi-calendar-week"></i><span class="sidebar-link-label">Calendar</span></a>
+            <a class="sidebar-link {% if active_page == 'goals' %}active{% endif %}" href="{{ url_for('goals') }}"><i class="bi bi-bullseye"></i><span class="sidebar-link-label">Goals</span></a>
           </nav>
         </div>
         <div class="sidebar-section">
           <span class="sidebar-title">Analyze</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}"><i class="bi bi-graph-up"></i>Reports</a>
+            <a class="sidebar-link {% if active_page == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}"><i class="bi bi-graph-up"></i><span class="sidebar-link-label">Reports</span></a>
           </nav>
         </div>
         <div class="sidebar-section">
           <span class="sidebar-title">Manage</span>
           <nav class="sidebar-nav">
-            <a class="sidebar-link {% if active_page == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}"><i class="bi bi-folder2-open"></i>Projects</a>
-            <a class="sidebar-link {% if active_page == 'labels' %}active{% endif %}" href="{{ url_for('labels') }}"><i class="bi bi-tags"></i>Tags</a>
-            <a class="sidebar-link {% if active_page == 'tasks' %}active{% endif %}" href="{{ url_for('index') }}"><i class="bi bi-list-check"></i>Tasks</a>
-            <a class="sidebar-link {% if active_page == 'account' %}active{% endif %}" href="{{ url_for('account') }}"><i class="bi bi-person-circle"></i>Account</a>
+            <a class="sidebar-link {% if active_page == 'projects' %}active{% endif %}" href="{{ url_for('projects') }}"><i class="bi bi-folder2-open"></i><span class="sidebar-link-label">Projects</span></a>
+            <a class="sidebar-link {% if active_page == 'labels' %}active{% endif %}" href="{{ url_for('labels') }}"><i class="bi bi-tags"></i><span class="sidebar-link-label">Tags</span></a>
+            <a class="sidebar-link {% if active_page == 'tasks' %}active{% endif %}" href="{{ url_for('index') }}"><i class="bi bi-list-check"></i><span class="sidebar-link-label">Tasks</span></a>
+            <a class="sidebar-link {% if active_page == 'account' %}active{% endif %}" href="{{ url_for('account') }}"><i class="bi bi-person-circle"></i><span class="sidebar-link-label">Account</span></a>
           </nav>
         </div>
         <div class="sidebar-footer">
           <button class="btn btn-outline-light btn-sm theme-toggle" type="button" data-theme-toggle>
             <i class="bi bi-moon-stars"></i>
-            Theme
+            <span class="theme-toggle-label">Theme</span>
           </button>
         </div>
       </aside>
-      <main class="col-12 col-lg-10 px-0">
-        {% block content %}{% endblock %}
+      <main class="app-main col-12 col-lg-10 px-0">
+        <div class="page-content">
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="site-footer">
+          <div class="site-footer-inner">
+            <div class="footer-brand">
+              <span class="footer-title">Focus</span>
+              <p class="footer-copy">Track sessions, ship goals, and keep momentum every day.</p>
+            </div>
+            <div class="footer-links">
+              <span class="footer-label">Navigate</span>
+              <div class="footer-nav">
+                <a href="{{ url_for('timer') }}">Timer</a>
+                <a href="{{ url_for('projects') }}">Projects</a>
+                <a href="{{ url_for('reports') }}">Reports</a>
+                <a href="{{ url_for('account') }}">Account</a>
+              </div>
+            </div>
+            <div class="footer-meta">
+              <span class="footer-label">Status</span>
+              <div class="footer-stat">
+                <span>Focused today</span>
+                <strong>02:15</strong>
+              </div>
+              <div class="footer-stat">
+                <span>Week total</span>
+                <strong>18:40</strong>
+              </div>
+            </div>
+          </div>
+          <div class="site-footer-bottom">
+            <span>Built for deep work.</span>
+            <span>v1.0</span>
+          </div>
+        </footer>
       </main>
     </div>
   </div>
