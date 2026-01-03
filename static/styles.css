@@ -673,6 +673,11 @@ body {
   cursor: pointer;
 }
 
+.habit-actions .edit-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .habit-actions .icon-button.danger {
   border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
