@@ -352,11 +352,43 @@
       });
 
       const chartEl = document.getElementById("habits-chart");
+      let habitChart = null;
+      const getChartTheme = () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        return {
+          line: isDark ? "#8fb1ff" : "#1f6feb",
+          fill: isDark ? "rgba(90, 141, 255, 0.25)" : "rgba(31, 111, 235, 0.15)",
+          point: isDark ? "#8fb1ff" : "#1f6feb",
+          grid: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.1)",
+          text: isDark ? "#cbd5f5" : "#1f2937",
+          tooltipBg: isDark ? "#111827" : "#ffffff",
+          tooltipBorder: isDark ? "#2a3342" : "#e2e8f0",
+        };
+      };
+      const applyChartTheme = (chart) => {
+        const theme = getChartTheme();
+        if (!chart) {
+          return;
+        }
+        chart.data.datasets[0].borderColor = theme.line;
+        chart.data.datasets[0].backgroundColor = theme.fill;
+        chart.data.datasets[0].pointBackgroundColor = theme.point;
+        chart.options.scales.x.ticks.color = theme.text;
+        chart.options.scales.y.ticks.color = theme.text;
+        chart.options.scales.x.grid.color = theme.grid;
+        chart.options.scales.y.grid.color = theme.grid;
+        chart.options.plugins.tooltip.backgroundColor = theme.tooltipBg;
+        chart.options.plugins.tooltip.borderColor = theme.tooltipBorder;
+        chart.options.plugins.tooltip.titleColor = theme.text;
+        chart.options.plugins.tooltip.bodyColor = theme.text;
+        chart.update();
+      };
       if (chartEl && typeof Chart !== "undefined") {
         const labels = {{ habit_series["labels"] | tojson }};
         const values = {{ habit_series["values"] | tojson }};
+        const theme = getChartTheme();
         const ctx = chartEl.getContext("2d");
-        new Chart(ctx, {
+        habitChart = new Chart(ctx, {
           type: "line",
           data: {
             labels,
@@ -364,12 +396,12 @@
               {
                 label: "Completion %",
                 data: values,
-                borderColor: "#1f6feb",
-                backgroundColor: "rgba(31, 111, 235, 0.15)",
+                borderColor: theme.line,
+                backgroundColor: theme.fill,
                 fill: true,
                 tension: 0.35,
                 pointRadius: 3,
-                pointBackgroundColor: "#1f6feb",
+                pointBackgroundColor: theme.point,
               },
             ],
           },
@@ -377,11 +409,23 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
+              x: {
+                ticks: {
+                  color: theme.text,
+                },
+                grid: {
+                  color: theme.grid,
+                },
+              },
               y: {
                 min: 0,
                 max: 100,
                 ticks: {
+                  color: theme.text,
                   callback: (value) => `${value}%`,
+                },
+                grid: {
+                  color: theme.grid,
                 },
               },
             },
@@ -390,6 +434,11 @@
                 display: false,
               },
               tooltip: {
+                backgroundColor: theme.tooltipBg,
+                borderColor: theme.tooltipBorder,
+                borderWidth: 1,
+                titleColor: theme.text,
+                bodyColor: theme.text,
                 callbacks: {
                   label: (context) => `${context.parsed.y}% complete`,
                 },
@@ -398,6 +447,17 @@
           },
         });
       }
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        if (target.closest("[data-theme-toggle]")) {
+          setTimeout(() => {
+            applyChartTheme(habitChart);
+          }, 0);
+        }
+      });
     });
   </script>
 {% endblock %}
