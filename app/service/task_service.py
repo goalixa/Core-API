@@ -591,9 +591,17 @@ class TaskService:
 
             linked_task_ids = sorted(linked_task_ids)
             total_seconds = sum(task_totals.get(task_id, 0) for task_id in linked_task_ids)
-            target_seconds = int(goal["target_seconds"] or 0)
-            progress = int((total_seconds / target_seconds) * 100) if target_seconds else 0
-            progress = min(progress, 100)
+            subgoals = goal_subgoals_map.get(goal_id, [])
+            subgoals_total = len(subgoals)
+            subgoals_done = sum(1 for subgoal in subgoals if subgoal["status"] == "completed")
+            if subgoals_total:
+                progress = int((subgoals_done / subgoals_total) * 100)
+                display_status = "completed" if subgoals_done == subgoals_total else "active"
+            else:
+                target_seconds = int(goal["target_seconds"] or 0)
+                progress = int((total_seconds / target_seconds) * 100) if target_seconds else 0
+                progress = min(progress, 100)
+                display_status = goal["status"]
 
             goal_list.append(
                 {
@@ -601,10 +609,12 @@ class TaskService:
                     "project_ids": linked_project_ids,
                     "task_ids": direct_task_ids,
                     "projects": [projects_by_id[pid] for pid in linked_project_ids if pid in projects_by_id],
-                    "subgoals": goal_subgoals_map.get(goal_id, []),
-                    "subgoals_count": len(goal_subgoals_map.get(goal_id, [])),
+                    "subgoals": subgoals,
+                    "subgoals_count": subgoals_total,
+                    "subgoals_completed": subgoals_done,
                     "total_seconds": total_seconds,
                     "progress": progress,
+                    "display_status": display_status,
                     "tasks_count": len(linked_task_ids),
                     "projects_count": len(linked_project_ids),
                 }
@@ -697,6 +707,31 @@ class TaskService:
 
     def delete_goal(self, goal_id):
         self.repository.delete_goal(goal_id)
+
+    def set_goal_subgoal_status(self, subgoal_id, done):
+        subgoal = self.repository.fetch_goal_subgoal(int(subgoal_id))
+        if not subgoal:
+            return
+        status = "completed" if done else "pending"
+        self.repository.set_goal_subgoal_status(int(subgoal_id), status)
+        goal_id = subgoal["goal_id"]
+        subgoals = self.repository.fetch_goal_subgoals([goal_id]).get(goal_id, [])
+        if not subgoals:
+            return
+        completed = sum(1 for item in subgoals if item["status"] == "completed")
+        goal_status = "completed" if completed == len(subgoals) else "active"
+        goal = self.repository.fetch_goal(goal_id)
+        if not goal:
+            return
+        self.repository.update_goal(
+            int(goal_id),
+            goal["name"],
+            goal["description"],
+            goal_status,
+            goal["priority"],
+            goal["target_date"],
+            int(goal["target_seconds"] or 0),
+        )
 
     def start_task(self, task_id):
         if not self.repository.is_task_running(task_id):

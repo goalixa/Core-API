@@ -635,6 +635,25 @@ class SQLiteTaskRepository:
             )
         db.commit()
 
+    def fetch_goal_subgoal(self, subgoal_id):
+        db = self._get_db()
+        return db.execute(
+            """
+            SELECT id, goal_id, title, status, created_at
+            FROM goal_subgoals
+            WHERE id = ?
+            """,
+            (subgoal_id,),
+        ).fetchone()
+
+    def set_goal_subgoal_status(self, subgoal_id, status):
+        db = self._get_db()
+        db.execute(
+            "UPDATE goal_subgoals SET status = ? WHERE id = ?",
+            (status, subgoal_id),
+        )
+        db.commit()
+
     def fetch_habits(self):
         db = self._get_db()
         return db.execute(

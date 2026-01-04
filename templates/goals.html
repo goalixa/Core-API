@@ -74,8 +74,8 @@
           {% for goal in goals %}
             <article class="goal-card">
               <div class="goal-top">
-                <span class="goal-status {{ 'paused' if goal['status'] == 'at_risk' else 'completed' if goal['status'] in ['completed', 'archived'] else 'active' }}">
-                  {{ goal['status'] | replace('_', ' ') }}
+                <span class="goal-status {{ 'paused' if goal['display_status'] == 'at_risk' else 'completed' if goal['display_status'] in ['completed', 'archived'] else 'active' }}">
+                  {{ goal['display_status'] | replace('_', ' ') }}
                 </span>
                 <span class="goal-deadline">
                   {% if goal['target_date'] %}Target: {{ goal['target_date'] }}{% else %}No target{% endif %}
@@ -104,7 +104,11 @@
                 <div class="goal-progress-bar">
                   <span style="width: {{ goal['progress'] }}%"></span>
                 </div>
-                <span class="goal-progress-text">{{ goal['progress'] }}% complete</span>
+                {% if goal['subgoals_count'] %}
+                  <span class="goal-progress-text">{{ goal['subgoals_completed'] }} / {{ goal['subgoals_count'] }} sub-goals</span>
+                {% else %}
+                  <span class="goal-progress-text">{{ goal['progress'] }}% complete</span>
+                {% endif %}
               </div>
               <div class="goal-meta">
                 <div class="goal-meta-block">
@@ -117,7 +121,7 @@
                 </div>
                 <div class="goal-meta-block">
                   <span class="goal-meta-label">Sub-goals</span>
-                  <span class="goal-meta-value">{{ goal['subgoals_count'] }}</span>
+                  <span class="goal-meta-value">{{ goal['subgoals_completed'] }} / {{ goal['subgoals_count'] }}</span>
                 </div>
                 <div class="goal-meta-block">
                   <span class="goal-meta-label">Time logged</span>
@@ -215,6 +219,49 @@
           {% endfor %}
         {% else %}
           <p class="empty">No goals yet.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card subgoals-card">
+      <div class="goals-header">
+        <div>
+          <p class="goals-label">Breakdown</p>
+          <h2 class="goals-title">Sub-goals</h2>
+        </div>
+      </div>
+      <div class="subgoals-grid">
+        {% if goals %}
+          {% for goal in goals %}
+            {% if goal['subgoals'] %}
+              <article class="subgoal-group">
+                <div class="subgoal-group-header">
+                  <div>
+                    <h3>{{ goal['name'] }}</h3>
+                    <p class="subgoal-group-meta">{{ goal['subgoals_completed'] }} / {{ goal['subgoals_count'] }} completed</p>
+                  </div>
+                  <span class="goal-status {{ 'paused' if goal['display_status'] == 'at_risk' else 'completed' if goal['display_status'] in ['completed', 'archived'] else 'active' }}">
+                    {{ goal['display_status'] | replace('_', ' ') }}
+                  </span>
+                </div>
+                <div class="subgoal-list">
+                  {% for subgoal in goal['subgoals'] %}
+                    <div class="subgoal-item {% if subgoal['status'] == 'completed' %}is-done{% endif %}">
+                      <form class="subgoal-toggle" method="post" action="{{ url_for('toggle_goal_subgoal', subgoal_id=subgoal['id']) }}">
+                        <label>
+                          <input type="checkbox" name="done" {% if subgoal['status'] == 'completed' %}checked{% endif %} onchange="this.form.submit()" />
+                          <span class="subgoal-title">{{ subgoal['title'] }}</span>
+                        </label>
+                      </form>
+                      <span class="subgoal-meta">{{ subgoal['created_at'][:10] }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </article>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p class="empty">No sub-goals yet.</p>
         {% endif %}
       </div>
     </section>

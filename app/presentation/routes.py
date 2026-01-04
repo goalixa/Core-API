@@ -202,6 +202,13 @@ def register_routes(app, service):
         )
         return redirect(url_for("goals"))
 
+    @app.route("/goals/subgoals/<int:subgoal_id>/toggle", methods=["POST"])
+    @auth_required()
+    def toggle_goal_subgoal(subgoal_id):
+        done = request.form.get("done") == "on"
+        service.set_goal_subgoal_status(subgoal_id, done)
+        return redirect(request.referrer or url_for("goals"))
+
     @app.route("/goals/<int:goal_id>/delete", methods=["POST"])
     @auth_required()
     def delete_goal(goal_id):
