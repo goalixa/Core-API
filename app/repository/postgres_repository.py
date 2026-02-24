@@ -5,7 +5,11 @@ from datetime import datetime
 import psycopg
 from psycopg.rows import dict_row
 
-from flask import g
+from flask import g, has_app_context
+
+
+class UserEmailConflictError(RuntimeError):
+    """Raised when an email is already bound to a different user id."""
 
 
 class PostgresTaskRepository:
@@ -24,12 +28,23 @@ class PostgresTaskRepository:
         )
 
     def set_user_id(self, user_id):
-        self.user_id = int(user_id) if user_id is not None else None
+        resolved = int(user_id) if user_id is not None else None
+        self.user_id = resolved
+        if has_app_context():
+            g.repository_user_id = resolved
+
+    def _current_user_id(self):
+        if has_app_context():
+            request_user_id = g.get("repository_user_id")
+            if request_user_id is not None:
+                return int(request_user_id)
+        return self.user_id
 
     def _require_user_id(self):
-        if self.user_id is None:
+        user_id = self._current_user_id()
+        if user_id is None:
             raise RuntimeError("User context not set for repository access.")
-        return self.user_id
+        return user_id
 
     def _get_db(self):
         existing = g.get("db")
@@ -519,19 +534,39 @@ class PostgresTaskRepository:
 
     def ensure_user(self, email):
         """Ensure user exists in the database. Create if not exists."""
-        if self.user_id is None:
+        user_id = self._current_user_id()
+        if user_id is None:
             return None
         db = self._get_db()
-        user_id = self.user_id
+        normalized_email = (email or "").strip().lower()
+        if not normalized_email:
+            return None
 
-        # Check if user exists
-        row = db.execute('SELECT id FROM "user" WHERE id = %s', (user_id,)).fetchone()
-        if row:
+        # Ensure email is not already owned by another user id.
+        email_row = db.execute(
+            'SELECT id FROM "user" WHERE email = %s',
+            (normalized_email,),
+        ).fetchone()
+        if email_row and int(email_row["id"]) != user_id:
+            raise UserEmailConflictError(
+                f'Email "{normalized_email}" is already assigned to user_id={email_row["id"]}.'
+            )
+
+        # Ensure requested user id is not already mapped to another email.
+        id_row = db.execute(
+            'SELECT email FROM "user" WHERE id = %s',
+            (user_id,),
+        ).fetchone()
+        if id_row:
+            if (id_row.get("email") or "").strip().lower() != normalized_email:
+                raise UserEmailConflictError(
+                    f"user_id={user_id} is already mapped to a different email."
+                )
             return user_id
 
         # Create user with their email (app DB doesn't need auth data, use placeholder values)
         columns = ["id", "email"]
-        values = [user_id, email]
+        values = [user_id, normalized_email]
         existing_columns = self._get_table_columns("user")
         if "password_hash" in existing_columns:
             columns.append("password_hash")
@@ -545,20 +580,26 @@ class PostgresTaskRepository:
 
         placeholders = ", ".join(["%s"] * len(columns))
         column_list = ", ".join(columns)
-        db.execute(
-            f'''INSERT INTO "user" ({column_list})
-            VALUES ({placeholders})
-            ON CONFLICT (id) DO NOTHING''',
-            tuple(values),
-        )
+        try:
+            db.execute(
+                f'''INSERT INTO "user" ({column_list})
+                VALUES ({placeholders})
+                ON CONFLICT (id) DO NOTHING''',
+                tuple(values),
+            )
+        except psycopg.errors.UniqueViolation as exc:
+            db.rollback()
+            raise UserEmailConflictError(
+                f'Email "{normalized_email}" is already registered.'
+            ) from exc
         db.commit()
         return user_id
 
     def ensure_default_project(self, name, created_at):
         db = self._get_db()
-        if self.user_id is None:
+        user_id = self._current_user_id()
+        if user_id is None:
             return None
-        user_id = self.user_id
         db.execute(
             """
             INSERT INTO projects (user_id, name, created_at)
@@ -576,9 +617,9 @@ class PostgresTaskRepository:
 
     def backfill_tasks_project(self, project_id):
         db = self._get_db()
-        if self.user_id is None:
+        user_id = self._current_user_id()
+        if user_id is None:
             return
-        user_id = self.user_id
         db.execute(
             "UPDATE tasks SET project_id = %s WHERE user_id = %s AND (project_id IS NULL OR project_id = 0)",
             (project_id, user_id),
@@ -906,7 +947,7 @@ class PostgresTaskRepository:
 
     def get_setting(self, key):
         db = self._get_db()
-        user_id = self.user_id
+        user_id = self._current_user_id()
         scoped_key = f"user:{user_id}:{key}" if user_id is not None else key
         row = db.execute(
             "SELECT value FROM app_settings WHERE key = %s",
@@ -924,7 +965,7 @@ class PostgresTaskRepository:
 
     def set_setting(self, key, value):
         db = self._get_db()
-        user_id = self.user_id
+        user_id = self._current_user_id()
         scoped_key = f"user:{user_id}:{key}" if user_id is not None else key
         db.execute(
             """

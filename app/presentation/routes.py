@@ -5,6 +5,7 @@ from flask import jsonify, request
 from werkzeug.datastructures import MultiDict
 
 from app.auth_client import auth_required, current_user
+from app.repository.postgres_repository import UserEmailConflictError
 
 
 def register_routes(app, service):
@@ -26,7 +27,14 @@ def register_routes(app, service):
     def load_user_context():
         if current_user.is_authenticated:
             service.repository.set_user_id(current_user.id)
-            service.ensure_user_setup(current_user.email)
+            try:
+                service.ensure_user_setup(current_user.email)
+            except UserEmailConflictError:
+                app.logger.warning(
+                    "user setup blocked by email conflict",
+                    extra={"email": current_user.email, "user_id": current_user.id},
+                )
+                return jsonify({"success": False, "error": "Email already registered."}), 409
             return
         service.repository.set_user_id(None)
 
