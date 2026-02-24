@@ -1,0 +1,46 @@
+# Prometheus Configuration for Goalixa App
+# This file configures Prometheus to scrape metrics from Goalixa services
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files (optional)
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Goalixa App Service Metrics
+  - job_name: 'goalixa-app'
+    static_configs:
+      - targets: ['app-service:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Goalixa Auth Service Metrics
+  - job_name: 'goalixa-auth'
+    static_configs:
+      - targets: ['auth-service:5001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Goalixa BFF Service Metrics
+  - job_name: 'goalixa-bff'
+    static_configs:
+      - targets: ['bff-service:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # BFF Health Checks (for uptime monitoring)
+  - job_name: 'goalixa-bff-health'
+    static_configs:
+      - targets: ['bff-service:8000']
+    metrics_path: '/health'
+    scrape_interval: 30s
