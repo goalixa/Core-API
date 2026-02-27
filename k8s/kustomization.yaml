@@ -13,6 +13,6 @@ resources:
 images:
   - name: ghcr.io/goalixa/goalixa-app
     newName: harbor.goalixa.com/goalixa-app/app
-    newTag: latest
+    newTag: 99ca64b
 
 # Secret is managed separately - create using kubectl create secret generic
