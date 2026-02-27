@@ -8,6 +8,10 @@ metadata:
   labels:
     app.kubernetes.io/name: app
     app.kubernetes.io/part-of: goalixa
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: harbor.goalixa.com/goalixa-app/app
+    argocd-image-updater.argoproj.io/harbor.goalixa.com/goalixa-app/app.update-strategy: latest
+    argocd-image-updater.argoproj.io/harbor.goalixa.com/goalixa-app/app.force-update: "true"
 spec:
   project: default
   source:
@@ -24,6 +28,14 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - RespectIgnoreDifferences=true
+    managedNamespaceMetadata:
+      labels:
+        app.kubernetes.io/part-of: goalixa
+    ignoreDifferences:
+      - group: apps
+        kind: Deployment
+        jsonPointers:
+          - /spec/containers/0/image
     retry:
       limit: 5
       backoff:
