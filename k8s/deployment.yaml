@@ -14,10 +14,10 @@ spec:
         app: core-api
     spec:
       imagePullSecrets:
-        - name: ghcr-pull
+        - name: harbor-pull
       containers:
         - name: core-api
-          image: ghcr.io/goalixa/core-api:latest
+          image: ghcr.io/goalixa/goalixa-app:latest
           imagePullPolicy: Always
           ports:
             - name: http
