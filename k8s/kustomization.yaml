@@ -7,7 +7,6 @@ resources:
   - pvc.yaml
   - service.yaml
   - deployment.yaml
-  # No ingress - core-api is internal only, accessed via BFF
   - middleware.yaml
 
 images:
@@ -15,4 +14,3 @@ images:
     newName: harbor.goalixa.com/core-api/app
     newTag: 6f76147
 
-# Secret is managed separately in the cluster
