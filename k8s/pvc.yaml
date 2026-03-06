@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: goalixa-data
+  name: core-api-data
   namespace: core-api
 spec:
   accessModes:

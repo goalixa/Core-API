@@ -5,7 +5,7 @@ metadata:
   namespace: core-api
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.middlewares: core-api-disable-pwa-cache@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: core-api-disable-cache@kubernetescrd
     traefik.ingress.kubernetes.io/router.priority: "11"
 spec:
   ingressClassName: traefik
@@ -17,20 +17,20 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: goalixa
+                name: core-api
                 port:
                   number: 80
           - path: /manifest.webmanifest
             pathType: Exact
             backend:
               service:
-                name: goalixa
+                name: core-api
                 port:
                   number: 80
           - path: /manifest.json
             pathType: Exact
             backend:
               service:
-                name: goalixa
+                name: core-api
                 port:
                   number: 80

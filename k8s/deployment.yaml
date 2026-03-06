@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: goalixa
+  name: core-api
   namespace: core-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: goalixa
+      app: core-api
   template:
     metadata:
       labels:
-        app: goalixa
+        app: core-api
     spec:
       imagePullSecrets:
         - name: ghcr-pull
       containers:
-        - name: goalixa
+        - name: core-api
           image: ghcr.io/goalixa/core-api:latest
           imagePullPolicy: Always
           ports:
@@ -24,37 +24,37 @@ spec:
               containerPort: 80
           envFrom:
             - configMapRef:
-                name: goalixa-config
+                name: core-api-config
           env:
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: SECRET_KEY
             - name: AUTH_JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: AUTH_JWT_SECRET
             - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: GOOGLE_CLIENT_ID
             - name: GOOGLE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: GOOGLE_CLIENT_SECRET
             - name: ADMIN_EMAIL
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: ADMIN_EMAIL
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: goalixa-secrets
+                  name: core-api-secrets
                   key: ADMIN_PASSWORD
           volumeMounts:
             - name: data
@@ -74,4 +74,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: goalixa-data
+            claimName: core-api-data

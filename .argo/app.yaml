@@ -34,8 +34,15 @@ spec:
     ignoreDifferences:
       - group: apps
         kind: Deployment
+        name: core-api
         jsonPointers:
           - /spec/containers/0/image
+      - group: \"\"
+        kind: PersistentVolumeClaim
+        name: core-api-data
+        jqPathExpressions:
+          - .spec.volumeName
+          - .spec.storageClassName
     retry:
       limit: 5
       backoff:
